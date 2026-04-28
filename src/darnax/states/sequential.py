@@ -76,6 +76,7 @@ class SequentialState(State):
     """
 
     states: list[Array]
+    fields: list[Array]
     dtype: jnp.dtype = eqx.field(static=True)
     data_min_ndim: int = eqx.field(default=2, static=True)
 
@@ -110,6 +111,7 @@ class SequentialState(State):
         self.dtype = dtype
         # Start with (1, *size) buffers. Call `init` to match a real batch size.
         self.states = [jnp.zeros((1, *size), dtype=dtype) for size in shape_tuples]
+        self.fields = [jnp.zeros((1, *size), dtype=dtype) for size in shape_tuples]
 
     def __len__(self) -> int:
         """Return the number of layers (including input and output)."""
@@ -155,6 +157,10 @@ class SequentialState(State):
         """
         new_self: Self = eqx.tree_at(lambda s: s.states, self, value)
         return new_self
+    
+    def replace_fields(self, value: Sequence[Array] | PyTree) -> Self:
+        new_self: Self = eqx.tree_at(lambda s: s.fields, self, value)
+        return new_self
 
     def replace_val(self, idx: int, value: Array) -> Self:
         """Return a new instance with layer ``idx`` replaced by ``value``.
@@ -173,6 +179,10 @@ class SequentialState(State):
 
         """
         new_self: Self = eqx.tree_at(lambda s: s.states[idx], self, value)
+        return new_self
+    
+    def replace_field(self, idx: int, value: Array) -> Self:
+        new_self: Self = eqx.tree_at(lambda s: s.fields[idx], self, value)
         return new_self
 
     def init(self, x: Array, y: Array | None = None) -> Self:
@@ -227,10 +237,18 @@ class SequentialState(State):
         # --- allocate new (B, *size_l) buffers and set endpoints ---
         b = x.shape[0]
         new_states = [jnp.zeros((b, *shape), dtype=self.dtype) for shape in layer_shapes]
+        new_fields = [jnp.zeros((b, *shape), dtype=self.dtype) for shape in layer_shapes]
+
         new_states[0] = x
+        new_fields[0] = x
+
         if y is not None:
             new_states[-1] = y
-        new_self: Self = eqx.tree_at(lambda m: m.states, self, new_states)
+        new_self: Self = eqx.tree_at(
+            lambda m: (m.states, m.fields),
+            self,
+            (new_states, new_fields),
+        )
         return new_self
 
     @property

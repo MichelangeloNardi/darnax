@@ -72,17 +72,95 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
     """
 
     lmap: LayerMap  # not static; module parameters will be updated externally
+    field_momentum: float
+    zero_sign_value: float
+    mask_prob: float
 
-    def __init__(self, layers: LayerMap):
+    def __init__(
+        self,
+        layers: LayerMap,
+        field_momentum: float = 0.0,
+        zero_sign_value: float = 1.0,
+        mask_prob: float = 0.0,
+    ):
         """Initialize the orchestrator from a layermap.
 
         Parameters
         ----------
         layers : LayerMap
             Static adjacency (rows/cols) with Equinox modules as values.
+        field_momentum : float, optional
+            Momentum coefficient ``τ`` for the field update rule
+            ``f(t+1) = τ·f(t) + (1-τ)·h(t+1)``. ``0.0`` (default) disables
+            momentum and recovers the standard synchronous dynamics.
+        zero_sign_value : float, optional
+            Value substituted for zero activations after binarization. Default ``1.0``.
+        mask_prob : float, optional
+            Probability that each unit's state is **frozen** (not updated) on
+            any given dynamics step. ``0.0`` (default) disables masking.
+            A fresh Bernoulli mask is sampled per receiver per step using the
+            step RNG, so masking is fully reproducible given the same key.
 
         """
         self.lmap = layers
+        self.field_momentum = float(field_momentum)
+        self.zero_sign_value = float(zero_sign_value)
+        self.mask_prob = float(mask_prob)
+    
+
+    def _apply_field_momentum(self, old_field: Array, new_field: Array) -> Array:
+        tau = self.field_momentum
+        if tau <= 0.0:
+            return new_field
+        return tau * old_field + (1.0 - tau) * new_field
+    
+
+    def _safe_activate(self, receiver_idx: int, field: Array) -> Array:
+        activated = self.lmap[receiver_idx, receiver_idx].activation(field)  # type: ignore
+        if self.zero_sign_value is not None:
+            activated = jnp.where(activated == 0, self.zero_sign_value, activated)
+        return activated
+
+    def _apply_mask(
+        self,
+        rng: KeyArray,
+        new_state: Array,
+        old_state: Array,
+        new_field: Array,
+        old_field: Array,
+    ) -> tuple[Array, Array, KeyArray]:
+        """Randomly freeze a fraction of units, keeping their old state and field.
+
+        A Bernoulli mask is sampled with ``p = mask_prob`` (probability of
+        **freezing** a unit). Masked units retain both their previous binary
+        state and their previous continuous field so that ``s = sign(f)``
+        remains consistent.
+
+        Parameters
+        ----------
+        rng : KeyArray
+            PRNG key; consumed and a fresh key is returned.
+        new_state : Array
+            Candidate binary activations ``(B, *size)`` for this step.
+        old_state : Array
+            Current binary state ``(B, *size)`` before this step.
+        new_field : Array
+            Candidate blended field ``(B, *size)`` for this step.
+        old_field : Array
+            Current field ``(B, *size)`` before this step.
+
+        Returns
+        -------
+        (masked_state, masked_field, new_rng) : tuple[Array, Array, KeyArray]
+            State and field after masking, plus the advanced RNG key.
+
+        """
+        rng, sub = jax.random.split(rng)
+        # mask == True  →  freeze this unit (keep old values)
+        mask = jax.random.bernoulli(sub, p=self.mask_prob, shape=new_state.shape)
+        masked_state = jnp.where(mask, old_state, new_state)
+        masked_field = jnp.where(mask, old_field, new_field)
+        return masked_state, masked_field, rng
 
     # ---------------------------- public API ----------------------------
 
@@ -130,7 +208,18 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
             rng, sub = jax.random.split(rng)
             messages = self._compute_messages(senders_group, state, rng=sub)
             aggregated: Array = self.lmap[receiver_idx, receiver_idx].reduce(messages)  # type: ignore
-            activated: Array = self.lmap[receiver_idx, receiver_idx].activation(aggregated)  # type: ignore
+
+            prev_field = state.fields[receiver_idx]
+            mixed_field = self._apply_field_momentum(prev_field, aggregated)
+
+            activated: Array = self._safe_activate(receiver_idx, mixed_field)
+
+            if self.mask_prob > 0.0:
+                activated, mixed_field, rng = self._apply_mask(
+                    rng, activated, state[receiver_idx], mixed_field, prev_field
+                )
+
+            state = state.replace_field(receiver_idx, mixed_field)
             state = state.replace_val(receiver_idx, activated)
         return state, rng
 
@@ -186,7 +275,12 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         rng, sub = jax.random.split(rng)
         messages = self._compute_messages(senders_group, state, rng=sub)
         aggregated = self.lmap[receiver_idx, receiver_idx].reduce(messages)  # type: ignore
-        activated = self.lmap[receiver_idx, receiver_idx].activation(aggregated)  # type: ignore
+
+        prev_field = state.fields[receiver_idx]
+        mixed_field = self._apply_field_momentum(prev_field, aggregated)
+        activated = self._safe_activate(receiver_idx, mixed_field)
+
+        state = state.replace_field(receiver_idx, mixed_field)
         state = state.replace_val(-1, activated)
         return state, rng
 
@@ -269,7 +363,12 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
                 self.lmap[receiver_idx, receiver_idx].reduce(msgs),  # type: ignore
             )
         # Second pass: ask each module for its update.
-        return type(self)(layers=self._backward_direct(state, activations, target_state, gate))
+        return type(self)(
+            layers=self._backward_direct(state, activations, target_state, gate),
+            field_momentum=self.field_momentum,
+            zero_sign_value=self.zero_sign_value,
+            mask_prob=self.mask_prob,
+        )
 
     # ---------------------------- internals ----------------------------
 

@@ -1,0 +1,5 @@
+kernel_size,condition,test_acc,n_params
+3,Conv-Win + FC-J (frozen),0.07859999686479568,67305719
+3,Conv-Win + Conv-J (frozen),0.09049999713897705,180616
+3,Conv-Win (learn) + FC-J (frozen),0.07859999686479568,67305719
+3,Conv-Win + Conv-J (both learn),0.09049999713897705,180616

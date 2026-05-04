@@ -66,6 +66,7 @@ def build_model(
                 channels=n_channels, kernel_size=recur_kernel_size,
                 groups=n_channels, j_d=j_d_conv, threshold=threshold,
                 padding_mode="constant", key=keys[1],
+                lr=1.0, weight_decay=0.0,
             ),
             2: GlobalUnpooling(strength=1.0, axis=(1, 2)),
         },

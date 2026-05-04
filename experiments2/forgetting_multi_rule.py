@@ -303,13 +303,27 @@ def run_grid(
     max_updates_a: int,
     max_updates_b: int,
     consecutive_k: int,
+    resume_from: str | None = None,
 ) -> list[dict[str, Any]]:
-    grid_results = []
-    total = len(threshold_grid) * len(lr_grid) * n_seeds
+    # Load already-completed configs if resuming
+    existing: dict[tuple[float, float], dict] = {}
+    if resume_from is not None:
+        p = Path(resume_from)
+        if p.exists():
+            prev = json.loads(p.read_text())
+            for r in prev.get("grid_results", []):
+                existing[(r["threshold"], r["learning_rate"])] = r
+            print(f"Resuming: loaded {len(existing)} existing configs from {resume_from}")
+
+    grid_results = list(existing.values())
+    configs_to_run = [(t, l) for t in threshold_grid for l in lr_grid
+                      if (t, l) not in existing]
+    total = len(configs_to_run) * n_seeds
+    skipped = len(existing)
+    print(f"Skipping {skipped} already-done configs, running {len(configs_to_run)} new ones.")
     done = 0
 
-    for threshold in threshold_grid:
-        for lr in lr_grid:
+    for threshold, lr in configs_to_run:
             seed_results = []
             for seed in range(n_seeds):
                 done += 1
@@ -381,11 +395,11 @@ def parse_args() -> argparse.Namespace:
                    choices=["current", "approximate", "long_warmup", "ep"],
                    required=True)
     p.add_argument("--threshold-grid", nargs="+", type=float,
-                   default=[1.3, 1.5, 1.7, 1.9],
-                   help="Threshold values to sweep. Default: 1.3 1.5 1.7 1.9")
+                   default=[0.7, 1.1, 1.5, 1.9, 2.3, 2.7, 3.1],
+                   help="Threshold values to sweep.")
     p.add_argument("--lr-grid", nargs="+", type=float,
-                   default=[0.01, 0.03, 0.05, 0.1],
-                   help="Learning rate values to sweep. Default: 0.01 0.03 0.05 0.1")
+                   default=[0.0001, 0.001, 0.005, 0.01, 0.03, 0.05, 0.1],
+                   help="Learning rate values to sweep.")
     p.add_argument("--ep-alpha",      type=float, default=0.3,
                    help="EP de-stabilization strength. Default: 0.3 (sweet spot from single-pattern study).")
     p.add_argument("--momentum",      type=float, default=0.0)
@@ -404,6 +418,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--output",        type=str,
                    default=None,
                    help="Output JSON path. Default: forgetting_{rule}.json")
+    p.add_argument("--resume",        type=str, default=None,
+                   help="Path to an existing results JSON to resume from. "
+                        "Already-completed (threshold, lr) pairs are skipped and merged.")
     return p.parse_args()
 
 
@@ -417,11 +434,13 @@ def main() -> None:
     print(f"LR grid: {args.lr_grid}")
     print(f"Total configs: {len(args.threshold_grid) * len(args.lr_grid)} × {args.n_seeds} seeds")
 
+    out_path = Path(args.output or f"results/tuning/forgetting_broad_{args.rule}.json")
     grid_results = run_grid(
         rule=args.rule,
         x_a=x_a, y_a=y_a, x_b=x_b, y_b=y_b,
         threshold_grid=args.threshold_grid,
         lr_grid=args.lr_grid,
+        resume_from=args.resume,
         n_seeds=args.n_seeds,
         momentum=args.momentum,
         mask_prob=args.mask,
@@ -435,7 +454,6 @@ def main() -> None:
         consecutive_k=args.memorization_k,
     )
 
-    out_path = Path(args.output or f"forgetting_{args.rule}.json")
     out_path.write_text(json.dumps({"config": vars(args), "grid_results": grid_results}, indent=2))
     print(f"\nSaved to {out_path.resolve()}")
 

@@ -283,7 +283,7 @@ def compute_grads_rule2(orch, states: PhaseStates, rng):
     return eqx.filter(grads, eqx.is_inexact_array), rng
 
 
-def compute_rads_rule3(orch, states: PhaseStates, rng, ep_alpha: float = 1.0):
+def compute_grads_rule3(orch, states: PhaseStates, rng, ep_alpha: float = 1.0):
     """EP-like: stabilize C (clamped) and de-stabilize B (free).
     Combined update = backward(C) - ep_alpha * backward(B).
     ep_alpha=1.0 is the full contrastive case; smaller values soften de-stabilization.

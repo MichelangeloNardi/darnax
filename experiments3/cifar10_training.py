@@ -234,8 +234,8 @@ def parse_args():
     p.add_argument("--n-clamped",     type=int,   default=5)
     p.add_argument("--n-free",        type=int,   default=5)
     p.add_argument("--n-eval-free",   type=int,   default=10)
-    p.add_argument("--batch-size",    type=int,   default=1,
-                   help="Training batch size. Default 1 (single-image, like gap experiments).")
+    p.add_argument("--batch-size",    type=int,   default=32,
+                   help="Training batch size. Default 32.")
     p.add_argument("--n-epochs",      type=int,   default=3)
     p.add_argument("--eval-every",    type=int,   default=100,
                    help="Evaluate every N weight updates.")

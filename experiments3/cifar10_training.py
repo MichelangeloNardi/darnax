@@ -171,7 +171,10 @@ def run_training(
     for epoch in range(n_epochs):
         for x, y in data_train:
             x = reshape_x(x)
-            rng = trainer.train_step(x, y, rng)
+            # Train one image at a time — local plasticity rules are attractor-based
+            # and cannot meaningfully average gradients across multiple patterns at once.
+            for i in range(x.shape[0]):
+                rng = trainer.train_step(x[i:i+1], y[i:i+1], rng)
             batch_idx += 1
 
             if batch_idx % eval_every == 0:
@@ -180,15 +183,17 @@ def run_training(
                 train_accs = []
                 for x_e, y_e in data_test:
                     x_e = reshape_x(x_e)
-                    rng, metrics = trainer.eval_step(x_e, y_e, rng)
-                    test_accs.append(float(metrics["accuracy"]))
-                    if len(test_accs) >= 10:
+                    for i in range(x_e.shape[0]):
+                        rng, metrics = trainer.eval_step(x_e[i:i+1], y_e[i:i+1], rng)
+                        test_accs.append(float(metrics["accuracy"]))
+                    if len(test_accs) >= 80:
                         break
                 for x_e, y_e in data_train:
                     x_e = reshape_x(x_e)
-                    rng, metrics = trainer.eval_step(x_e, y_e, rng)
-                    train_accs.append(float(metrics["accuracy"]))
-                    if len(train_accs) >= 10:
+                    for i in range(x_e.shape[0]):
+                        rng, metrics = trainer.eval_step(x_e[i:i+1], y_e[i:i+1], rng)
+                        train_accs.append(float(metrics["accuracy"]))
+                    if len(train_accs) >= 80:
                         break
 
                 entry = {

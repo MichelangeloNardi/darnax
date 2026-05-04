@@ -13,6 +13,8 @@ dependencies = [
   "optax>=0.2.3,<0.3",
   "datasets>=4.1.1",
   "pillow>=12.0.0",
+  "matplotlib>=3.10.7",
+  "scikit-learn>=1.8.0",
 ]
 
 [dependency-groups]

@@ -1,0 +1,93 @@
+{
+  "config": {
+    "rules": [
+      "current",
+      "long_warmup"
+    ],
+    "max_patterns": 2,
+    "threshold": 1.7,
+    "learning_rate": 0.05,
+    "momentum": 0.0,
+    "mask": 0.0,
+    "n_warmup": 1,
+    "n_warmup_long": 30,
+    "n_clamped": 5,
+    "n_free": 5,
+    "n_updates": 5,
+    "n_seeds": 1,
+    "image_start": 0,
+    "output": "gap_multi_pattern_test.json"
+  },
+  "results": [
+    {
+      "rule": "current",
+      "seed": 0,
+      "pattern_sequence": [
+        {
+          "n_patterns_trained": 1,
+          "pattern_idx": 0,
+          "final_CD_per_pattern": {
+            "0": 0.28125
+          },
+          "final_margin_per_pattern": {
+            "0": -0.37882018089294434
+          },
+          "final_acc_per_pattern": {
+            "0": 1.0
+          }
+        },
+        {
+          "n_patterns_trained": 2,
+          "pattern_idx": 1,
+          "final_CD_per_pattern": {
+            "0": 0.34375,
+            "1": 0.375
+          },
+          "final_margin_per_pattern": {
+            "0": -1.779099941253662,
+            "1": -0.08779197931289673
+          },
+          "final_acc_per_pattern": {
+            "0": 0.0,
+            "1": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "rule": "long_warmup",
+      "seed": 0,
+      "pattern_sequence": [
+        {
+          "n_patterns_trained": 1,
+          "pattern_idx": 0,
+          "final_CD_per_pattern": {
+            "0": 0.96875
+          },
+          "final_margin_per_pattern": {
+            "0": 2.7006943225860596
+          },
+          "final_acc_per_pattern": {
+            "0": 1.0
+          }
+        },
+        {
+          "n_patterns_trained": 2,
+          "pattern_idx": 1,
+          "final_CD_per_pattern": {
+            "0": 1.0,
+            "1": 0.8125
+          },
+          "final_margin_per_pattern": {
+            "0": 1.7101836204528809,
+            "1": -0.48903414607048035
+          },
+          "final_acc_per_pattern": {
+            "0": 1.0,
+            "1": 0.0
+          }
+        }
+      ]
+    }
+  ]
+}

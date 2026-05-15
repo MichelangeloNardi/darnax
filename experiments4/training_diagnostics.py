@@ -96,15 +96,14 @@ def _run_phases(orch, state, image, label, cfg, key):
 # Diagnostic 1: weight delta norm per module
 # ---------------------------------------------------------------------------
 
-def _param_norm(tree) -> float:
-    leaves = jtu.tree_leaves(eqx.filter(tree, eqx.is_inexact_array))
-    return float(sum(jnp.sum(l ** 2) for l in leaves) ** 0.5)
+def _param_norm(module) -> float:
+    # Only use the kernel — scalar hyperparams like anti_threshold=-1e9
+    # would otherwise dominate the norm completely.
+    return float(jnp.sum(module.kernel ** 2) ** 0.5)
 
 
-def _param_delta(tree_before, tree_after) -> float:
-    before = jtu.tree_leaves(eqx.filter(tree_before, eqx.is_inexact_array))
-    after  = jtu.tree_leaves(eqx.filter(tree_after,  eqx.is_inexact_array))
-    return float(sum(jnp.sum((b - a) ** 2) for b, a in zip(before, after)) ** 0.5)
+def _param_delta(mod_before, mod_after) -> float:
+    return float(jnp.sum((mod_before.kernel - mod_after.kernel) ** 2) ** 0.5)
 
 
 def snapshot_modules(orch):
@@ -303,8 +302,10 @@ def main():
         W_norm = {m: _param_norm(snap_after[m]) for m in snap_after}
 
         # --- diagnostic 2: CD overlap ---
+        # Use a clean zero state (not the last training state) so the
+        # dynamics start from the same neutral point every time.
         cd_mean, key = measure_cd(
-            trainer.orchestrator, trainer.state,
+            trainer.orchestrator, state_template,
             cd_images, cd_labels, cfg, key
         )
 

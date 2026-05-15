@@ -40,7 +40,7 @@ sys.path.insert(0, str(REPO / "src"))
 
 from darnax.datasets.classification.cifar10 import Cifar10
 from darnax.modules.conv.conv import Conv2D, Conv2DRecurrentDiscrete
-from darnax.modules.conv.pooling import MajorityPooling, ConstantUnpooling
+from darnax.modules.conv.pooling import ConstantUnpooling
 from darnax.modules.conv.spatial_fc import ChannelWBack, PooledFlattenFC
 from darnax.modules.input_output import OutputLayer
 from darnax.layer_maps.sparse import LayerMap
@@ -81,8 +81,13 @@ def build_model(cfg: dict, key: jax.Array):
             2: ConstantUnpooling(kernel_size=2, strength=cfg["strength_back"]),
         },
         2: {
-            # feedforward from layer 1 (downsampled, frozen)
-            1: MajorityPooling(kernel_size=2, strength=1.0, key=keys[2], stride=2),
+            # feedforward from layer 1 (learnable strided conv, downsamples 32→16)
+            1: Conv2D(
+                in_channels=C1, out_channels=C2, kernel_size=3,
+                threshold=cfg["threshold_win"], strength=1.0,
+                key=keys[2], padding_mode="constant", lr=1.0, weight_decay=0.0,
+                stride=2,
+            ),
             # recurrent self-connections
             2: Conv2DRecurrentDiscrete(
                 channels=C2, kernel_size=KSIZE, groups=1,
@@ -124,16 +129,17 @@ def make_optimizer(orchestrator, cfg: dict):
         return optax.sgd(lr, momentum=mom) if mom > 0 else optax.sgd(lr)
 
     labels = jtu.tree_map(lambda _: "default", params, is_leaf=eqx.is_array)
-    for (i, j), lbl in [((1, 0), "win"), ((1, 1), "j1"), ((2, 2), "j2"), ((3, 2), "wout")]:
+    for (i, j), lbl in [((1, 0), "win"), ((1, 1), "j1"), ((2, 1), "w12"), ((2, 2), "j2"), ((3, 2), "wout")]:
         labels = eqx.tree_at(
             lambda m, r=i, c=j: m.lmap[r][c], labels,
             replace=like(params.lmap[i][j], lbl),
         )
 
     opt = optax.multi_transform({
-        "default": optax.sgd(0.0),   # frozen (ChannelWBack, pooling)
+        "default": optax.sgd(0.0),   # frozen (ChannelWBack, ConstantUnpooling)
         "win":     sgd(-cfg["lr_win"]),
         "j1":      sgd(-cfg["lr_j"]),
+        "w12":     sgd(-cfg["lr_win"]),  # inter-layer conv, same lr as Win
         "j2":      sgd(-cfg["lr_j"]),
         "wout":    sgd(cfg["lr_wout"]),
     }, labels)
@@ -220,10 +226,11 @@ def train_one_seed(cfg: dict, ds: Cifar10, seed: int):
                 normed.reshape(kh, kw, ci, co),
             )
 
-        # kernel decay on Win, J1, J2
+        # kernel decay on Win, J1, W12, J2
         for path in [
             lambda o: o.lmap[1][0].kernel,
             lambda o: o.lmap[1][1].kernel,
+            lambda o: o.lmap[2][1].kernel,
             lambda o: o.lmap[2][2].kernel,
         ]:
             trainer.orchestrator = eqx.tree_at(
@@ -284,7 +291,7 @@ def main():
     print(f"  probe best:          {all_probe_np.max(axis=1).mean():.4f}")
     print(f"  1-layer baseline:    0.4501 (C=16, T21 reference)")
 
-    out = results_dir / "two_layer.json"
+    out = results_dir / "two_layer_v2.json"
     out.write_text(json.dumps({
         "C1": C1, "C2": C2, "seeds": SEEDS, "epochs": EPOCHS, "config": cfg,
         "head_accs": all_head, "probe_accs": all_probe,
@@ -310,7 +317,7 @@ def main():
 
     fig.suptitle(f"Two-layer conv — entropy rule, {len(SEEDS)} seeds", fontsize=10)
     fig.tight_layout()
-    fig_path = figs_dir / "two_layer.png"
+    fig_path = figs_dir / "two_layer_v2.png"
     fig.savefig(fig_path, dpi=120)
     plt.close(fig)
     print(f"Plot saved to {fig_path}")

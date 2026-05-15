@@ -96,14 +96,17 @@ def _run_phases(orch, state, image, label, cfg, key):
 # Diagnostic 1: weight delta norm per module
 # ---------------------------------------------------------------------------
 
+def _get_weight(module):
+    # Conv modules use .kernel; FC modules use .W
+    return module.kernel if hasattr(module, "kernel") else module.W
+
+
 def _param_norm(module) -> float:
-    # Only use the kernel — scalar hyperparams like anti_threshold=-1e9
-    # would otherwise dominate the norm completely.
-    return float(jnp.sum(module.kernel ** 2) ** 0.5)
+    return float(jnp.sum(_get_weight(module) ** 2) ** 0.5)
 
 
 def _param_delta(mod_before, mod_after) -> float:
-    return float(jnp.sum((mod_before.kernel - mod_after.kernel) ** 2) ** 0.5)
+    return float(jnp.sum((_get_weight(mod_before) - _get_weight(mod_after)) ** 2) ** 0.5)
 
 
 def snapshot_modules(orch):

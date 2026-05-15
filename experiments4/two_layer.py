@@ -1,9 +1,9 @@
 """two_layer.py
 
-Two-layer conv architecture:
+Two-layer conv architecture at same spatial resolution:
   - Layer 1: Conv2D(3→C1) + Conv2DRecurrentDiscrete(C1) — spatial 32×32
-  - Layer 2: Conv2D(C1→C2) + Conv2DRecurrentDiscrete(C2) — spatial 16×16 (downsampled)
-  - Inter-layer: MajorityPooling(stride=2) forward, ConstantUnpooling backward (both frozen)
+  - Layer 2: Conv2D(C1→C2) + Conv2DRecurrentDiscrete(C2) — spatial 32×32 (no downsampling)
+  - Inter-layer: Conv2D(C1→C2, stride=1) forward, no backward connection
   - Feedback: ChannelWBack(10→C2) only to layer 2
   - Output: PooledFlattenFC on layer 2 representations
 
@@ -40,7 +40,6 @@ sys.path.insert(0, str(REPO / "src"))
 
 from darnax.datasets.classification.cifar10 import Cifar10
 from darnax.modules.conv.conv import Conv2D, Conv2DRecurrentDiscrete
-from darnax.modules.conv.pooling import ConstantUnpooling
 from darnax.modules.conv.spatial_fc import ChannelWBack, PooledFlattenFC
 from darnax.modules.input_output import OutputLayer
 from darnax.layer_maps.sparse import LayerMap
@@ -51,8 +50,8 @@ from darnax.trainers.dynamical import DynamicalTrainer
 C1, C2   = 16, 16     # channels in layer 1 and layer 2
 KSIZE    = 5
 H1, W1   = 32, 32     # layer 1 spatial size
-H2, W2   = 16, 16     # layer 2 spatial size (downsampled 2x)
-POOL     = 4          # avg-pool for probe: 16/4 = 4x4 tiles → 4*4*C2 features
+H2, W2   = 32, 32     # layer 2 spatial size (same resolution)
+POOL     = 8          # avg-pool for probe: 32/8 = 4x4 tiles → 4*4*C2 features
 EPOCHS   = 20
 SEEDS    = [0, 42, 123]
 PROBE_EPOCHS = 20
@@ -77,16 +76,13 @@ def build_model(cfg: dict, key: jax.Array):
                 key=keys[1], padding_mode="constant", lr=1.0, weight_decay=0.0,
                 entropy_beta=cfg["entropy_beta"], lambda_entropy=1.0,
             ),
-            # feedback from layer 2 (upsampled, frozen)
-            2: ConstantUnpooling(kernel_size=2, strength=cfg["strength_back"]),
         },
         2: {
-            # feedforward from layer 1 (learnable strided conv, downsamples 32→16)
+            # feedforward from layer 1 (learnable conv, same resolution)
             1: Conv2D(
                 in_channels=C1, out_channels=C2, kernel_size=3,
                 threshold=cfg["threshold_win"], strength=1.0,
                 key=keys[2], padding_mode="constant", lr=1.0, weight_decay=0.0,
-                stride=2,
             ),
             # recurrent self-connections
             2: Conv2DRecurrentDiscrete(
@@ -291,7 +287,7 @@ def main():
     print(f"  probe best:          {all_probe_np.max(axis=1).mean():.4f}")
     print(f"  1-layer baseline:    0.4501 (C=16, T21 reference)")
 
-    out = results_dir / "two_layer_v2.json"
+    out = results_dir / "two_layer_v3.json"
     out.write_text(json.dumps({
         "C1": C1, "C2": C2, "seeds": SEEDS, "epochs": EPOCHS, "config": cfg,
         "head_accs": all_head, "probe_accs": all_probe,
@@ -317,7 +313,7 @@ def main():
 
     fig.suptitle(f"Two-layer conv — entropy rule, {len(SEEDS)} seeds", fontsize=10)
     fig.tight_layout()
-    fig_path = figs_dir / "two_layer_v2.png"
+    fig_path = figs_dir / "two_layer_v3.png"
     fig.savefig(fig_path, dpi=120)
     plt.close(fig)
     print(f"Plot saved to {fig_path}")

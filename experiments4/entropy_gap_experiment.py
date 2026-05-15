@@ -260,17 +260,16 @@ def main() -> None:
            if k not in {"wback_type", "j1_window_hebb", "j1_entropy",
                         "trial_number", "probe_acc", "c05_j1"}}
 
-    ds = Cifar10(batch_size=1, x_transform="identity", label_mode="pm1",
+    ds = Cifar10(batch_size=2, x_transform="identity", label_mode="pm1",
                  linear_projection=None, rescale=True)
     ds.build(jax.random.PRNGKey(0))
 
     it = iter(ds)
-    xb0, yb0 = next(it)
-    xb1, yb1 = next(it)
-    image_A = to_hwc(xb0)
-    image_B = to_hwc(xb1)
-    label_A = yb0
-    label_B = yb1
+    xb0, yb0 = next(it)   # shape: (2, ...) — take first sample from each
+    image_A = to_hwc(xb0[0:1])
+    image_B = to_hwc(xb0[1:2])
+    label_A = yb0[0:1]
+    label_B = yb0[1:2]
 
     print(f"Image A class: {int(np.argmax(np.array(label_A)[0]))}")
     print(f"Image B class: {int(np.argmax(np.array(label_B)[0]))}")

@@ -61,11 +61,11 @@ C, KSIZE = 16, 5
 H, W = 32, 32
 POOL = 8
 PROBE_DIM = (H // POOL) * (W // POOL) * C  # 256
-EPOCHS = 20
-SEEDS = [0, 42, 123]
-PROBE_EPOCHS = 20
+EPOCHS = 5
+SEEDS = [0, 42]
+PROBE_EPOCHS = 10
 PROBE_WD = 1.433e-4
-FINETUNE_EPOCHS = 30  # Adam fine-tune passes after standard training
+FINETUNE_EPOCHS = 20  # Adam fine-tune passes after standard training
 
 
 # ---------------------------------------------------------------------------

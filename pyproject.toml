@@ -13,6 +13,11 @@ dependencies = [
   "optax>=0.2.3,<0.3",
   "datasets>=4.1.1",
   "pillow>=12.0.0",
+  "matplotlib>=3.10.7",
+  "torch>=2.11.0",
+  "torchvision>=0.26.0",
+  "optuna>=4.8.0",
+  "cmaes>=0.13.0",
 ]
 
 [dependency-groups]

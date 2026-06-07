@@ -177,6 +177,7 @@ class Conv2D(Adapter):
     weight_decay: Array
     anti_threshold: Array
     anti_strength: Array
+    ema_m2: Array  # (out_channels,) running E[h²] per output channel
 
     strength: float = eqx.field(static=True)
     in_channels: int = eqx.field(static=True)
@@ -185,6 +186,8 @@ class Conv2D(Adapter):
     kernel_size: tuple[int, int] = eqx.field(static=True)
     padding_mode: str | Callable[..., str] | None = eqx.field(static=True)
     normalize_rows: bool = eqx.field(static=True)
+    use_ema_norm: bool = eqx.field(static=True)
+    ema_momentum: float = eqx.field(static=True)
 
     def __init__(
         self,
@@ -203,6 +206,8 @@ class Conv2D(Adapter):
         normalize_rows: bool = False,
         anti_threshold: float = -1e9,
         anti_strength: float = 0.0,
+        use_ema_norm: bool = False,
+        ema_momentum: float = 0.99,
     ):
         """Initialize Conv2D adapter with proper variance scaling."""
         self.in_channels = int(in_channels)
@@ -213,6 +218,8 @@ class Conv2D(Adapter):
         self.threshold = jnp.asarray(threshold, dtype=dtype)
         self.strength = float(strength)
         self.normalize_rows = bool(normalize_rows)
+        self.use_ema_norm = bool(use_ema_norm)
+        self.ema_momentum = float(ema_momentum)
 
         kh, kw = self.kernel_size
         fan_in = kh * kw * self.in_channels
@@ -221,6 +228,7 @@ class Conv2D(Adapter):
         self.weight_decay = jnp.asarray(weight_decay, dtype=dtype)
         self.anti_threshold = jnp.asarray(anti_threshold, dtype=dtype)
         self.anti_strength = jnp.asarray(anti_strength, dtype=dtype)
+        self.ema_m2 = jnp.ones(self.out_channels, dtype=dtype)
 
         key, init_key = jax.random.split(key)
         self.kernel = jax.random.normal(
@@ -250,8 +258,9 @@ class Conv2D(Adapter):
 
         """
         h = conv_forward(x, self.kernel, self.stride, self.padding_mode)
-        if self.normalize_rows:
-            # Per-output-channel L2 norm of kernel rows: shape (cout,)
+        if self.use_ema_norm:
+            h = h / jnp.sqrt(self.ema_m2[None, None, None, :] + 1e-8)
+        elif self.normalize_rows:
             row_norms = jnp.sqrt(jnp.sum(self.kernel ** 2, axis=(0, 1, 2)) + 1e-8)
             h = h / row_norms[None, None, None, :]
         return self.strength * h
@@ -324,14 +333,11 @@ class Conv2D(Adapter):
             ),
         )
 
-        # When normalize_rows is active the forward divides each output channel c by
-        # ||kernel[:,:,:,c]||.  The gradient of the normalised margin m = s·K(x)/||K||
-        # w.r.t. K is s·x / ||K|| (dominant term), i.e. the standard Hebb direction
-        # divided by the row norm.  Dividing here keeps the learning rule consistent:
-        # updates are expressed in the same normalised space as the forward output.
-        # This also provides natural homeostasis: larger kernel → smaller per-unit
-        # update → growth decelerates without requiring weight decay.
-        if self.normalize_rows:
+        if self.use_ema_norm:
+            # Gradient of the normalised margin w.r.t. kernel includes 1/sqrt(m2).
+            m2_sqrt = jnp.sqrt(self.ema_m2[None, None, None, :] + 1e-8)
+            dW = dW / m2_sqrt
+        elif self.normalize_rows:
             row_norms = jnp.sqrt(jnp.sum(self.kernel ** 2, axis=(0, 1, 2)) + 1e-8)
             dW = dW / row_norms[None, None, None, :]
 
@@ -339,12 +345,27 @@ class Conv2D(Adapter):
         n, ho, wo, _ = y.shape
         decay_scale = 1.0 / jnp.sqrt(jnp.asarray(n * ho * wo, dtype=dW.dtype))
 
-        dW = self.lr * dW - self.weight_decay * decay_scale * self.kernel
+        if self.use_ema_norm:
+            # Decay in the effective-parameter space W_eff = W/sqrt(m2): both gradient
+            # and decay act on W_eff, so the equilibrium norm is scale-consistent.
+            dW = self.lr * dW - self.weight_decay * decay_scale * self.kernel / m2_sqrt
+        else:
+            dW = self.lr * dW - self.weight_decay * decay_scale * self.kernel
 
         zero_update: Self = jax.tree_util.tree_map(
             jnp.zeros_like, self, is_leaf=eqx.is_inexact_array
         )
-        update: Self = eqx.tree_at(lambda m: m.kernel, zero_update, dW)
+
+        if self.use_ema_norm:
+            h_raw = conv_forward(x, self.kernel, self.stride, self.padding_mode)
+            batch_m2 = jnp.mean(h_raw ** 2, axis=(0, 1, 2))
+            new_m2 = self.ema_momentum * self.ema_m2 + (1.0 - self.ema_momentum) * batch_m2
+            d_m2 = new_m2 - self.ema_m2
+            update: Self = eqx.tree_at(
+                lambda m: (m.kernel, m.ema_m2), zero_update, (dW, d_m2)
+            )
+        else:
+            update: Self = eqx.tree_at(lambda m: m.kernel, zero_update, dW)
         return update
 
 
@@ -460,6 +481,7 @@ class Conv2DRecurrentDiscrete(Layer):
     update_mask: Array  # same shape as kernel; 0 blocks constrained params
     anti_threshold: Array   # κ⁻ < 0; anti-Hebbian gate (m < anti_threshold)
     anti_strength: Array    # α ≥ 0; weight of anti-Hebbian term (0 = standard Hebbian)
+    ema_m2: Array  # (channels,) running E[h²] per output channel
 
     channels: int = eqx.field(static=True)
     normalize_rows: bool = eqx.field(static=True)
@@ -469,6 +491,8 @@ class Conv2DRecurrentDiscrete(Layer):
     central_element: tuple[int, int] = eqx.field(static=True)
     entropy_beta: float = eqx.field(static=True)
     lambda_entropy: float = eqx.field(static=True)
+    use_ema_norm: bool = eqx.field(static=True)
+    ema_momentum: float = eqx.field(static=True)
 
     def __init__(
         self,
@@ -488,6 +512,8 @@ class Conv2DRecurrentDiscrete(Layer):
         normalize_rows: bool = False,
         entropy_beta: float = 1.0,
         lambda_entropy: float = 0.0,
+        use_ema_norm: bool = False,
+        ema_momentum: float = 0.99,
     ):
         """Initialize recurrent convolution with diagonal constraint."""
         self.channels = int(channels)
@@ -516,6 +542,8 @@ class Conv2DRecurrentDiscrete(Layer):
         self.normalize_rows = bool(normalize_rows)
         self.entropy_beta = float(entropy_beta)
         self.lambda_entropy = float(lambda_entropy)
+        self.use_ema_norm = bool(use_ema_norm)
+        self.ema_momentum = float(ema_momentum)
 
         cin_g = self.channels // self.groups  # per-group input channels for JAX grouped conv
         cout = self.channels  # enforce Cin=Cout=channels
@@ -529,6 +557,8 @@ class Conv2DRecurrentDiscrete(Layer):
         self.kernel = jax.random.normal(
             init_key, shape=(kh, kw, cin_g, cout), dtype=dtype
         ) / jnp.sqrt(jnp.asarray(fan_in, dtype=dtype))
+
+        self.ema_m2 = jnp.ones(self.channels, dtype=dtype)
 
         # Build update mask once (0 at constrained params, 1 elsewhere), then hard-set j_d at init.
         self.update_mask = self._build_update_mask(dtype=dtype)
@@ -653,8 +683,9 @@ class Conv2DRecurrentDiscrete(Layer):
             dimension_numbers=("NHWC", "HWIO", "NHWC"),
             feature_group_count=self.groups,
         )
-        if self.normalize_rows:
-            # Per-output-channel L2 norm of kernel rows: shape (cout,)
+        if self.use_ema_norm:
+            h = h / jnp.sqrt(self.ema_m2[None, None, None, :] + 1e-8)
+        elif self.normalize_rows:
             row_norms = jnp.sqrt(jnp.sum(self.kernel ** 2, axis=(0, 1, 2)) + 1e-8)
             h = h / row_norms[None, None, None, :]
         return h
@@ -690,6 +721,19 @@ class Conv2DRecurrentDiscrete(Layer):
 
         """
         return jnp.asarray(tree_reduce(operator.add, h))
+
+    def _forward_raw(self, x: Array) -> Array:
+        """Compute the raw (un-normalised) field h = conv(x, kernel)."""
+        kh, kw = self.kernel_size
+        x_pad = pad_2d(x, kh // 2, kw // 2, self.padding_mode)
+        return lax.conv_general_dilated(
+            lhs=x_pad,
+            rhs=self.kernel,
+            window_strides=(1, 1),
+            padding="VALID",
+            dimension_numbers=("NHWC", "HWIO", "NHWC"),
+            feature_group_count=self.groups,
+        )
 
     # ---------- backward ----------
     def _diag_group_blocks(self, dw_full: Array) -> Array:
@@ -823,8 +867,10 @@ class Conv2DRecurrentDiscrete(Layer):
             modulation = jnp.maximum(0.0, 1.0 + self.lambda_entropy * ent_mod)
             dW = (dW_flat * modulation).reshape(kh, kw, cin_g, self.channels)
 
-        # Consistent backward for normalised forward (same as Conv2D above).
-        if self.normalize_rows:
+        if self.use_ema_norm:
+            m2_sqrt = jnp.sqrt(self.ema_m2[None, None, None, :] + 1e-8)
+            dW = dW / m2_sqrt
+        elif self.normalize_rows:
             row_norms = jnp.sqrt(jnp.sum(self.kernel ** 2, axis=(0, 1, 2)) + 1e-8)
             dW = dW / row_norms[None, None, None, :]
 
@@ -832,7 +878,10 @@ class Conv2DRecurrentDiscrete(Layer):
         n, ho, wo, _ = y.shape
         decay_scale = 1.0 / jnp.sqrt(jnp.asarray(n * ho * wo, dtype=dW.dtype))
 
-        dW = self.lr * dW - self.weight_decay * decay_scale * self.kernel
+        if self.use_ema_norm:
+            dW = self.lr * dW - self.weight_decay * decay_scale * self.kernel / m2_sqrt
+        else:
+            dW = self.lr * dW - self.weight_decay * decay_scale * self.kernel
 
         # hard constraint: prevent any change to constrained params (includes decay term)
         dW = dW * self.update_mask
@@ -840,7 +889,17 @@ class Conv2DRecurrentDiscrete(Layer):
         zero_update: Self = jax.tree_util.tree_map(
             jnp.zeros_like, self, is_leaf=eqx.is_inexact_array
         )
-        update: Self = eqx.tree_at(lambda m: m.kernel, zero_update, dW)
+
+        if self.use_ema_norm:
+            h_raw = self._forward_raw(x)
+            batch_m2 = jnp.mean(h_raw ** 2, axis=(0, 1, 2))
+            new_m2 = self.ema_momentum * self.ema_m2 + (1.0 - self.ema_momentum) * batch_m2
+            d_m2 = new_m2 - self.ema_m2
+            update: Self = eqx.tree_at(
+                lambda m: (m.kernel, m.ema_m2), zero_update, (dW, d_m2)
+            )
+        else:
+            update: Self = eqx.tree_at(lambda m: m.kernel, zero_update, dW)
         return update
 
 

@@ -223,16 +223,20 @@ def train_one_seed(cfg: dict, ds: Cifar10, seed: int) -> tuple[list[float], list
         # --- train ---
         for xb, yb in ds:
             key = trainer.train_step(to_hwc(xb), yb, key)
-            # normalize Win filters to unit L2 norm per output channel
-            win_k = trainer.orchestrator.lmap[1][0].kernel  # (kh, kw, 3, C)
-            kh, kw, ci, co = win_k.shape
-            flat   = win_k.reshape(-1, co)
-            normed = flat / (jnp.linalg.norm(flat, axis=0, keepdims=True) + 1e-8)
-            trainer.orchestrator = eqx.tree_at(
-                lambda o: o.lmap[1][0].kernel,
-                trainer.orchestrator,
-                normed.reshape(kh, kw, ci, co),
-            )
+            # Per-batch W_in column-normalisation was originally included here but
+            # suppresses W_in growth and causes probe accuracy to drop from ~0.46 to
+            # ~0.43.  Without it, W_in and J settle into a roughly equal contribution
+            # (~50/50), which is the regime that matches the reference (0.4501).
+            # Kept commented out for reference; the correct loop applies decay only.
+            # win_k = trainer.orchestrator.lmap[1][0].kernel  # (kh, kw, 3, C)
+            # kh, kw, ci, co = win_k.shape
+            # flat   = win_k.reshape(-1, co)
+            # normed = flat / (jnp.linalg.norm(flat, axis=0, keepdims=True) + 1e-8)
+            # trainer.orchestrator = eqx.tree_at(
+            #     lambda o: o.lmap[1][0].kernel,
+            #     trainer.orchestrator,
+            #     normed.reshape(kh, kw, ci, co),
+            # )
         # kernel decay at end of epoch
         for path in [lambda o: o.lmap[1][0].kernel, lambda o: o.lmap[1][1].kernel]:
             trainer.orchestrator = eqx.tree_at(

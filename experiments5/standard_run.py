@@ -160,16 +160,6 @@ def train_epoch(trainer, ds, cfg, key, update_win=True, update_j1=True):
     decay = cfg["kernel_decay_rate"]
     for xb, yb in ds:
         key = trainer.train_step(to_hwc(xb), yb, key)
-        if update_win:
-            win_k = trainer.orchestrator.lmap[1][0].kernel
-            kh, kw, ci, co = win_k.shape
-            flat   = win_k.reshape(-1, co)
-            normed = flat / (jnp.linalg.norm(flat, axis=0, keepdims=True) + 1e-8)
-            trainer.orchestrator = eqx.tree_at(
-                lambda o: o.lmap[1][0].kernel,
-                trainer.orchestrator,
-                normed.reshape(kh, kw, ci, co),
-            )
     if update_win:
         trainer.orchestrator = eqx.tree_at(
             lambda o: o.lmap[1][0].kernel,

@@ -25,14 +25,13 @@ NEW CODE vs standard_run.py
                       them through optax.set_to_zero() (no weight update, no
                       momentum state allocated).
 
-  train_epoch()     — unchanged helper from standard_run.py; the update_win /
-                      update_j1 flags skip Win normalisation and kernel decay for
-                      frozen modules so they stay exactly at their random init.
+  train_epoch()     — decay_win/decay_j1 flags control per-epoch kernel decay for
+                      active modules; frozen modules skip decay so they stay at
+                      their random init. Per-batch Win normalisation is removed.
 
-  The combination of lr=0.0 in the optimizer AND update_win/update_j1=False in
+  The combination of lr=0.0 in the optimizer AND decay_win/decay_j1=False in
   train_epoch is what implements true module freezing: the optimizer touches
-  nothing, and the out-of-optimizer operations (normalisation, decay) are also
-  skipped.
+  nothing, and the out-of-optimizer decay is also skipped.
 
   For offline_wout: after the training loop, run_probe() is called once on the
   final J1 representations and the resulting linear-layer weights are written
@@ -82,14 +81,14 @@ PROBE_EPOCHS = 20
 PROBE_WD     = 1.433e-4
 
 # --- per-mode flags -----------------------------------------------------------
-# update_win  : apply Win normalisation per-batch and Win kernel decay per-epoch
-# update_j1   : apply J1 kernel decay per-epoch
+# decay_win   : apply Win kernel decay per-epoch (only when Win is trained)
+# decay_j1    : apply J1 kernel decay per-epoch
 # lr_wout=0   : Wout frozen via optimizer (set_to_zero)
 MODE_FLAGS = {
-    #                       lr_win  lr_j   lr_wout  update_win  update_j1
-    "offline_wout":    dict(win=1,  j1=1,  wout=0,  norm_win=True,  decay_j1=True),
-    "random_baseline": dict(win=0,  j1=0,  wout=1,  norm_win=False, decay_j1=False),
-    "j_only":          dict(win=0,  j1=1,  wout=1,  norm_win=False, decay_j1=True),
+    #                       lr_win  lr_j   lr_wout  decay_win  decay_j1
+    "offline_wout":    dict(win=1,  j1=1,  wout=0,  decay_win=True,  decay_j1=True),
+    "random_baseline": dict(win=0,  j1=0,  wout=1,  decay_win=False, decay_j1=False),
+    "j_only":          dict(win=0,  j1=1,  wout=1,  decay_win=False, decay_j1=True),
 }
 
 
@@ -225,27 +224,17 @@ def run_probe(trainer, ds, key, return_weights=False):
     return best_test
 
 
-def train_epoch(trainer, ds, cfg, key, norm_win=True, decay_j1=True):
-    """One training epoch with conditional Win normalisation and kernel decay.
+def train_epoch(trainer, ds, cfg, key, decay_win=False, decay_j1=True):
+    """One training epoch with conditional kernel decay.
 
-    norm_win=False : skip per-batch Win normalisation and per-epoch Win decay
-                     (used when Win is frozen at random init)
-    decay_j1=False : skip per-epoch J1 kernel decay (used when J1 is frozen)
+    decay_win=True  : apply per-epoch kernel decay to Win (only when Win is trained)
+    decay_j1=False  : skip per-epoch J1 kernel decay (used when J1 is frozen)
+    Per-batch Win normalisation has been removed — it suppresses Win growth.
     """
     decay = cfg["kernel_decay_rate"]
     for xb, yb in ds:
         key = trainer.train_step(to_hwc(xb), yb, key)
-        if norm_win:
-            win_k = trainer.orchestrator.lmap[1][0].kernel
-            kh, kw, ci, co = win_k.shape
-            flat   = win_k.reshape(-1, co)
-            normed = flat / (jnp.linalg.norm(flat, axis=0, keepdims=True) + 1e-8)
-            trainer.orchestrator = eqx.tree_at(
-                lambda o: o.lmap[1][0].kernel,
-                trainer.orchestrator,
-                normed.reshape(kh, kw, ci, co),
-            )
-    if norm_win:
+    if decay_win:
         trainer.orchestrator = eqx.tree_at(
             lambda o: o.lmap[1][0].kernel,
             trainer.orchestrator,
@@ -302,7 +291,7 @@ def run_mode(mode, cfg, ds):
     for epoch in range(1, EPOCHS + 1):
         trainer, key = train_epoch(
             trainer, ds, cfg, key,
-            norm_win=flags["norm_win"],
+            decay_win=flags["decay_win"],
             decay_j1=flags["decay_j1"],
         )
         head_acc, key = eval_head(trainer, ds, key)

@@ -1,13 +1,13 @@
 """standard_run.py
 
 Standard channel-entropy training on CIFAR-10.
-Win, J1, Wout all train online. Single seed, 10 epochs, best config.
+Win, J1, Wout all train online. 5 seeds x 10 epochs, best config.
 
 Per-epoch: head accuracy (Wout perceptron rule) + linear probe on J1 reps.
 
 Saves to:
-  experiments5/results/standard.json   — per-epoch head_accs and probe_accs
-  experiments5/figures/standard.png    — accuracy curves
+  experiments5/results/standard.json   — per-seed and mean±std results
+  experiments5/figures/standard.png    — mean±std accuracy curves
 
 Run on cluster:
   ~/miniforge3/envs/darnax_hpc/bin/python experiments5/standard_run.py
@@ -40,7 +40,7 @@ from darnax.orchestrators.sequential import SequentialOrchestrator
 from darnax.states.sequential import SequentialState
 from darnax.trainers.dynamical import DynamicalTrainer
 
-SEED         = 0
+SEEDS        = [0, 42, 123, 7, 999]
 EPOCHS       = 10
 C, KSIZE     = 16, 5
 H, W, POOL   = 32, 32, 8
@@ -72,12 +72,7 @@ def build_model(cfg, key):
     return SequentialState([(H, W, 3), (H, W, C), 10]), SequentialOrchestrator(layers=layer_map)
 
 
-def make_optimizer(orchestrator, cfg, lr_win=None, lr_j=None, lr_wout=None):
-    """Build multi-transform SGD. Pass 0.0 to freeze a module, None to use cfg default."""
-    lr_win  = cfg["lr_win"]  if lr_win  is None else lr_win
-    lr_j    = cfg["lr_j"]    if lr_j    is None else lr_j
-    lr_wout = cfg["lr_wout"] if lr_wout is None else lr_wout
-
+def make_optimizer(orchestrator, cfg):
     mom = cfg["momentum"]
     params, _ = eqx.partition(orchestrator, eqx.is_inexact_array)
 
@@ -92,17 +87,11 @@ def make_optimizer(orchestrator, cfg, lr_win=None, lr_j=None, lr_wout=None):
         labels = eqx.tree_at(lambda m, r=i, c=j: m.lmap[r][c], labels,
                              replace=like(params.lmap[i][j], lbl))
 
-    # optax.set_to_zero() is memory-efficient for frozen modules (no momentum state)
-    def make_tx(lr, sign):
-        if lr == 0.0:
-            return optax.set_to_zero()
-        return sgd(sign * lr)
-
     opt = optax.multi_transform({
         "default": optax.set_to_zero(),
-        "win":  make_tx(lr_win,  -1.0),   # local rules return positive updates; SGD subtracts
-        "j1":   make_tx(lr_j,   -1.0),
-        "wout": make_tx(lr_wout, +1.0),   # perceptron rule already returns negative update
+        "win":  sgd(-cfg["lr_win"]),
+        "j1":   sgd(-cfg["lr_j"]),
+        "wout": sgd(cfg["lr_wout"]),
     }, labels)
     return opt, opt.init(eqx.filter(orchestrator, eqx.is_inexact_array))
 
@@ -117,7 +106,6 @@ def pool_j1(h):
 
 
 def run_probe(trainer, ds, key):
-    """Collect J1 reps on full train+test set, train linear probe, return best test acc."""
     reps_tr, lbl_tr, reps_te, lbl_te = [], [], [], []
     for xb, yb in ds:
         key, _ = trainer.eval_step(to_hwc(xb), yb, key)
@@ -155,33 +143,49 @@ def run_probe(trainer, ds, key):
     return best_test
 
 
-def train_epoch(trainer, ds, cfg, key, update_win=True, update_j1=True):
-    """One training epoch. Only applies Win normalization and kernel decay for active modules."""
+def train_epoch(trainer, ds, cfg, key):
     decay = cfg["kernel_decay_rate"]
     for xb, yb in ds:
         key = trainer.train_step(to_hwc(xb), yb, key)
-    if update_win:
+    for path in [lambda o: o.lmap[1][0].kernel, lambda o: o.lmap[1][1].kernel]:
         trainer.orchestrator = eqx.tree_at(
-            lambda o: o.lmap[1][0].kernel,
-            trainer.orchestrator,
-            trainer.orchestrator.lmap[1][0].kernel * (1.0 - decay),
-        )
-    if update_j1:
-        trainer.orchestrator = eqx.tree_at(
-            lambda o: o.lmap[1][1].kernel,
-            trainer.orchestrator,
-            trainer.orchestrator.lmap[1][1].kernel * (1.0 - decay),
+            path, trainer.orchestrator,
+            path(trainer.orchestrator) * (1.0 - decay),
         )
     return trainer, key
 
 
 def eval_head(trainer, ds, key):
-    """Evaluate model head (Wout) accuracy on the test set."""
     accs = []
     for xb, yb in ds.iter_test():
         key, metrics = trainer.eval_step(to_hwc(xb), yb, key)
         accs.append(float(metrics["accuracy"]))
     return float(np.mean(accs)), key
+
+
+def run_one_seed(seed, cfg, ds):
+    print(f"\n{'='*50}\nSeed {seed}\n{'='*50}", flush=True)
+    key = jax.random.PRNGKey(seed)
+    key, mk = jax.random.split(key)
+    state, orch = build_model(cfg, mk)
+    opt, opt_state = make_optimizer(orch, cfg)
+    trainer = DynamicalTrainer(
+        orchestrator=orch, state=state,
+        optimizer=opt, optimizer_state=opt_state,
+        warmup_n_iter=1,
+        train_clamped_n_iter=cfg["clamped_n_iter"],
+        train_free_n_iter=cfg["free_n_iter"],
+        eval_n_iter=5,
+    )
+    head_accs, probe_accs = [], []
+    for epoch in range(1, EPOCHS + 1):
+        trainer, key = train_epoch(trainer, ds, cfg, key)
+        head_acc, key = eval_head(trainer, ds, key)
+        probe_acc = run_probe(trainer, ds, key)
+        head_accs.append(head_acc)
+        probe_accs.append(probe_acc)
+        print(f"  seed={seed}  epoch={epoch:2d}/{EPOCHS}  head={head_acc:.4f}  probe={probe_acc:.4f}", flush=True)
+    return {"seed": seed, "head_accs": head_accs, "probe_accs": probe_accs}
 
 
 def main():
@@ -191,57 +195,55 @@ def main():
            if k not in {"wback_type", "j1_window_hebb", "j1_entropy",
                         "trial_number", "probe_acc", "c05_j1"}}
 
-    print("Config:", {k: round(v, 4) if isinstance(v, float) else v for k, v in cfg.items()})
+    print("Config:", {k: round(v, 4) if isinstance(v, float) else v for k, v in cfg.items()}, flush=True)
 
     ds = Cifar10(batch_size=32, x_transform="identity", label_mode="pm1",
                  linear_projection=None, rescale=True)
     ds.build(jax.random.PRNGKey(0))
 
-    key = jax.random.PRNGKey(SEED)
-    key, mk = jax.random.split(key)
-    state, orch = build_model(cfg, mk)
-    opt, opt_state = make_optimizer(orch, cfg)  # all modules active
+    per_seed = [run_one_seed(s, cfg, ds) for s in SEEDS]
 
-    trainer = DynamicalTrainer(
-        orchestrator=orch, state=state,
-        optimizer=opt, optimizer_state=opt_state,
-        warmup_n_iter=1,
-        train_clamped_n_iter=cfg["clamped_n_iter"],
-        train_free_n_iter=cfg["free_n_iter"],
-        eval_n_iter=5,
-    )
+    head_mat  = np.array([r["head_accs"]  for r in per_seed])  # (n_seeds, epochs)
+    probe_mat = np.array([r["probe_accs"] for r in per_seed])
 
-    head_accs, probe_accs = [], []
-    for epoch in range(1, EPOCHS + 1):
-        trainer, key = train_epoch(trainer, ds, cfg, key, update_win=True, update_j1=True)
-        head_acc, key = eval_head(trainer, ds, key)
-        probe_acc     = run_probe(trainer, ds, key)
-        head_accs.append(head_acc)
-        probe_accs.append(probe_acc)
-        print(f"epoch={epoch:2d}  head={head_acc:.4f}  probe={probe_acc:.4f}", flush=True)
+    out = {
+        "seeds":       SEEDS,
+        "epochs":      EPOCHS,
+        "per_seed":    per_seed,
+        "head_mean":   head_mat.mean(0).tolist(),
+        "head_std":    head_mat.std(0).tolist(),
+        "probe_mean":  probe_mat.mean(0).tolist(),
+        "probe_std":   probe_mat.std(0).tolist(),
+    }
+
+    print(f"\nHead  final: mean={head_mat[:, -1].mean():.4f}  std={head_mat[:, -1].std():.4f}", flush=True)
+    print(f"Probe final: mean={probe_mat[:, -1].mean():.4f}  std={probe_mat[:, -1].std():.4f}", flush=True)
 
     results_dir = HERE / "results"
     figures_dir = HERE / "figures"
     results_dir.mkdir(exist_ok=True)
     figures_dir.mkdir(exist_ok=True)
 
-    out = {"seed": SEED, "epochs": EPOCHS, "head_accs": head_accs, "probe_accs": probe_accs}
     out_path = results_dir / "standard.json"
     out_path.write_text(json.dumps(out, indent=2))
-    print(f"\nSaved to {out_path}")
+    print(f"Saved to {out_path}", flush=True)
 
     ep = np.arange(1, EPOCHS + 1)
     fig, ax = plt.subplots(figsize=(7, 4))
-    ax.plot(ep, head_accs,  "-o", label="W_out (head, perceptron rule)")
-    ax.plot(ep, probe_accs, "-s", label="Linear probe (J1 reps, Adam)")
+    hm, hs = head_mat.mean(0), head_mat.std(0)
+    pm, ps = probe_mat.mean(0), probe_mat.std(0)
+    ax.plot(ep, hm, "-o", color="#2563EB", label="Head (Wout, perceptron rule)")
+    ax.fill_between(ep, hm - hs, hm + hs, alpha=0.2, color="#2563EB")
+    ax.plot(ep, pm, "-s", color="#EA580C", label="Linear probe (J1, Adam)")
+    ax.fill_between(ep, pm - ps, pm + ps, alpha=0.2, color="#EA580C")
     ax.set_xlabel("Epoch"); ax.set_ylabel("Test accuracy")
-    ax.set_title(f"Standard training — seed={SEED}, {EPOCHS} epochs")
+    ax.set_title(f"Standard training — {len(SEEDS)} seeds ± 1 std")
     ax.legend(); ax.grid(alpha=0.3)
     fig.tight_layout()
     fig_path = figures_dir / "standard.png"
     fig.savefig(fig_path, dpi=120)
     plt.close(fig)
-    print(f"Plot saved to {fig_path}")
+    print(f"Plot saved to {fig_path}", flush=True)
 
 
 if __name__ == "__main__":

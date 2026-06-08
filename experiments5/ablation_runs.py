@@ -1,51 +1,30 @@
 """ablation_runs.py
 
 Three ablation training variants for the channel-entropy CIFAR-10 architecture.
-Single seed (default: 0), 10 epochs, best config.
+5 seeds x 10 epochs each, best config.
 
 Modes
 -----
   offline_wout    — Win + J1 train normally; Wout is frozen (lr=0) throughout
                     the 10 epochs. After training, Wout is optimised offline via
                     Adam+CE on the fixed final J1 representations and the model
-                    is evaluated with the new weights. Per-epoch head_acc will be
-                    near-random (frozen Wout); per-epoch probe_acc tracks J1 quality.
+                    is evaluated with the new weights.
 
   random_baseline — Win and J1 frozen at random initialisation; only Wout trains
-                    (perceptron rule, online). Proper random-feature baseline: how
-                    well can a linear head do on random convolutional features?
+                    online with the perceptron rule.
 
   j_only          — Win frozen at random init; J1 + Wout train normally.
-                    Measures the marginal benefit of learning J1 when Win is random.
 
-NEW CODE vs standard_run.py
----------------------------
-  make_optimizer()  — same function as in standard_run.py but lr_win / lr_j /
-                      lr_wout are set to 0.0 for frozen modules, which routes
-                      them through optax.set_to_zero() (no weight update, no
-                      momentum state allocated).
-
-  train_epoch()     — decay_win/decay_j1 flags control per-epoch kernel decay for
-                      active modules; frozen modules skip decay so they stay at
-                      their random init. Per-batch Win normalisation is removed.
-
-  The combination of lr=0.0 in the optimizer AND decay_win/decay_j1=False in
-  train_epoch is what implements true module freezing: the optimizer touches
-  nothing, and the out-of-optimizer decay is also skipped.
-
-  For offline_wout: after the training loop, run_probe() is called once on the
-  final J1 representations and the resulting linear-layer weights are written
-  back into trainer.orchestrator.lmap[2][1].W (the actual Wout matrix in the
-  JAX model). The model is then re-evaluated to confirm the transferred accuracy.
+Freezing is implemented by two independent mechanisms:
+  1. optax.set_to_zero() in the optimizer  — no weight update applied
+  2. decay_win/decay_j1=False in train_epoch — skips per-epoch kernel decay
 
 Results saved to:
-  experiments5/results/ablation_{mode}.json
+  experiments5/results/ablation_{mode}.json  — per-seed and mean±std
 
 Usage:
+  python experiments5/ablation_runs.py --mode all
   python experiments5/ablation_runs.py --mode offline_wout
-  python experiments5/ablation_runs.py --mode random_baseline
-  python experiments5/ablation_runs.py --mode j_only
-  python experiments5/ablation_runs.py --mode all   # run all three sequentially
 """
 
 from __future__ import annotations
@@ -73,17 +52,13 @@ from darnax.orchestrators.sequential import SequentialOrchestrator
 from darnax.states.sequential import SequentialState
 from darnax.trainers.dynamical import DynamicalTrainer
 
-SEED         = 0
+SEEDS        = [0, 42, 123, 7, 999]
 EPOCHS       = 10
 C, KSIZE     = 16, 5
 H, W, POOL   = 32, 32, 8
 PROBE_EPOCHS = 20
 PROBE_WD     = 1.433e-4
 
-# --- per-mode flags -----------------------------------------------------------
-# decay_win   : apply Win kernel decay per-epoch (only when Win is trained)
-# decay_j1    : apply J1 kernel decay per-epoch
-# lr_wout=0   : Wout frozen via optimizer (set_to_zero)
 MODE_FLAGS = {
     #                       lr_win  lr_j   lr_wout  decay_win  decay_j1
     "offline_wout":    dict(win=1,  j1=1,  wout=0,  decay_win=True,  decay_j1=True),
@@ -91,10 +66,6 @@ MODE_FLAGS = {
     "j_only":          dict(win=0,  j1=1,  wout=1,  decay_win=False, decay_j1=True),
 }
 
-
-# ---------------------------------------------------------------------------
-# Model
-# ---------------------------------------------------------------------------
 
 def build_model(cfg, key):
     keys = jax.random.split(key, 5)
@@ -120,17 +91,7 @@ def build_model(cfg, key):
     return SequentialState([(H, W, 3), (H, W, C), 10]), SequentialOrchestrator(layers=layer_map)
 
 
-# ---------------------------------------------------------------------------
-# Optimizer — the key difference from standard_run.py
-# ---------------------------------------------------------------------------
-
 def make_optimizer(orchestrator, cfg, lr_win_active, lr_j_active, lr_wout_active):
-    """Build multi-transform SGD optimizer with module-level freeze control.
-
-    Passing a *_active=0 routes that module through optax.set_to_zero() so
-    no update is applied and no momentum state is allocated.  Passing 1 uses
-    the learning rate from cfg as normal.
-    """
     mom = cfg["momentum"]
     params, _ = eqx.partition(orchestrator, eqx.is_inexact_array)
 
@@ -145,27 +106,14 @@ def make_optimizer(orchestrator, cfg, lr_win_active, lr_j_active, lr_wout_active
         labels = eqx.tree_at(lambda m, r=i, c=j: m.lmap[r][c], labels,
                              replace=like(params.lmap[i][j], lbl))
 
-    def tx_win():
-        return sgd(-cfg["lr_win"]) if lr_win_active else optax.set_to_zero()
-
-    def tx_j1():
-        return sgd(-cfg["lr_j"]) if lr_j_active else optax.set_to_zero()
-
-    def tx_wout():
-        return sgd(cfg["lr_wout"]) if lr_wout_active else optax.set_to_zero()
-
     opt = optax.multi_transform({
         "default": optax.set_to_zero(),
-        "win":  tx_win(),
-        "j1":   tx_j1(),
-        "wout": tx_wout(),
+        "win":  sgd(-cfg["lr_win"]) if lr_win_active else optax.set_to_zero(),
+        "j1":   sgd(-cfg["lr_j"])   if lr_j_active  else optax.set_to_zero(),
+        "wout": sgd(cfg["lr_wout"]) if lr_wout_active else optax.set_to_zero(),
     }, labels)
     return opt, opt.init(eqx.filter(orchestrator, eqx.is_inexact_array))
 
-
-# ---------------------------------------------------------------------------
-# Training utilities (identical to standard_run.py)
-# ---------------------------------------------------------------------------
 
 def to_hwc(xb):
     return xb.reshape(-1, 32, 32, 3) * 2.0 - 1.0
@@ -177,11 +125,6 @@ def pool_j1(h):
 
 
 def run_probe(trainer, ds, key, return_weights=False):
-    """Collect J1 reps, train linear probe (Adam+CE), return best test acc.
-
-    If return_weights=True, also returns the trained weight matrix (256, 10)
-    so it can be written back into the JAX Wout.
-    """
     reps_tr, lbl_tr, reps_te, lbl_te = [], [], [], []
     for xb, yb in ds:
         key, _ = trainer.eval_step(to_hwc(xb), yb, key)
@@ -203,7 +146,7 @@ def run_probe(trainer, ds, key, return_weights=False):
     loader = DataLoader(TensorDataset(X_tr, y_tr), batch_size=256, shuffle=True)
     crit   = nn.CrossEntropyLoss()
 
-    best_test, best_epoch_W = 0.0, None
+    best_test, best_W = 0.0, None
     for _ in range(PROBE_EPOCHS):
         probe.train()
         for xb_t, yb_t in loader:
@@ -216,34 +159,25 @@ def run_probe(trainer, ds, key, return_weights=False):
             te = (probe(X_te.to(device)).argmax(1) == y_te.to(device)).float().mean().item()
         if te > best_test:
             best_test = te
-            best_epoch_W = probe.weight.detach().cpu().numpy()  # (10, 256)
+            best_W = probe.weight.detach().cpu().numpy()  # (10, 256)
 
     if return_weights:
-        W_jax = best_epoch_W.T  # (256, 10) — matches FullyConnected.W shape
-        return best_test, W_jax
+        return best_test, best_W.T  # (256, 10)
     return best_test
 
 
 def train_epoch(trainer, ds, cfg, key, decay_win=False, decay_j1=True):
-    """One training epoch with conditional kernel decay.
-
-    decay_win=True  : apply per-epoch kernel decay to Win (only when Win is trained)
-    decay_j1=False  : skip per-epoch J1 kernel decay (used when J1 is frozen)
-    Per-batch Win normalisation has been removed — it suppresses Win growth.
-    """
     decay = cfg["kernel_decay_rate"]
     for xb, yb in ds:
         key = trainer.train_step(to_hwc(xb), yb, key)
     if decay_win:
         trainer.orchestrator = eqx.tree_at(
-            lambda o: o.lmap[1][0].kernel,
-            trainer.orchestrator,
+            lambda o: o.lmap[1][0].kernel, trainer.orchestrator,
             trainer.orchestrator.lmap[1][0].kernel * (1.0 - decay),
         )
     if decay_j1:
         trainer.orchestrator = eqx.tree_at(
-            lambda o: o.lmap[1][1].kernel,
-            trainer.orchestrator,
+            lambda o: o.lmap[1][1].kernel, trainer.orchestrator,
             trainer.orchestrator.lmap[1][1].kernel * (1.0 - decay),
         )
     return trainer, key
@@ -257,19 +191,9 @@ def eval_head(trainer, ds, key):
     return float(np.mean(accs)), key
 
 
-# ---------------------------------------------------------------------------
-# Per-mode training
-# ---------------------------------------------------------------------------
-
-def run_mode(mode, cfg, ds):
+def run_one_seed(mode, seed, cfg, ds):
     flags = MODE_FLAGS[mode]
-    print(f"\n{'='*60}")
-    print(f"MODE: {mode}")
-    print(f"  Win trains: {bool(flags['win'])}  |  J1 trains: {bool(flags['j1'])}  "
-          f"|  Wout trains: {bool(flags['wout'])}")
-    print(f"{'='*60}")
-
-    key = jax.random.PRNGKey(SEED)
+    key = jax.random.PRNGKey(seed)
     key, mk = jax.random.split(key)
     state, orch = build_model(cfg, mk)
     opt, opt_state = make_optimizer(
@@ -295,48 +219,69 @@ def run_mode(mode, cfg, ds):
             decay_j1=flags["decay_j1"],
         )
         head_acc, key = eval_head(trainer, ds, key)
-        probe_acc     = run_probe(trainer, ds, key)
+        probe_acc = run_probe(trainer, ds, key)
         head_accs.append(head_acc)
         probe_accs.append(probe_acc)
-        print(f"  epoch={epoch:2d}  head={head_acc:.4f}  probe={probe_acc:.4f}", flush=True)
+        print(f"  seed={seed}  epoch={epoch:2d}/{EPOCHS}  head={head_acc:.4f}  probe={probe_acc:.4f}", flush=True)
 
-    result = {
-        "mode": mode,
-        "seed": SEED,
-        "epochs": EPOCHS,
-        "head_accs": head_accs,
-        "probe_accs": probe_accs,
-    }
+    result = {"seed": seed, "head_accs": head_accs, "probe_accs": probe_accs}
 
-    # For offline_wout: after training, optimise Wout on fixed final J1 reps,
-    # write the weights back into the JAX model, and re-evaluate the head.
     if mode == "offline_wout":
-        print("\n  [offline_wout] Training Wout offline on final J1 representations...")
         offline_acc, W_opt = run_probe(trainer, ds, key, return_weights=True)
-        # Transfer trained weights into the JAX Wout (PooledFlattenFC.W)
         trainer.orchestrator = eqx.tree_at(
-            lambda o: o.lmap[2][1].W,
-            trainer.orchestrator,
-            jnp.array(W_opt),
+            lambda o: o.lmap[2][1].W, trainer.orchestrator, jnp.array(W_opt),
         )
         offline_head_acc, _ = eval_head(trainer, ds, key)
-        print(f"  offline_wout probe acc={offline_acc:.4f}  "
-              f"model head after transfer={offline_head_acc:.4f}")
-        result["offline_wout_probe_acc"]  = offline_acc
-        result["offline_wout_head_acc"]   = offline_head_acc
+        print(f"  [offline transfer] probe={offline_acc:.4f}  head={offline_head_acc:.4f}", flush=True)
+        result["offline_probe_acc"] = offline_acc
+        result["offline_head_acc"]  = offline_head_acc
 
     return result
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
+def run_mode(mode, cfg, ds):
+    print(f"\n{'='*60}", flush=True)
+    print(f"MODE: {mode}  ({len(SEEDS)} seeds)", flush=True)
+    flags = MODE_FLAGS[mode]
+    print(f"  Win trains: {bool(flags['win'])}  |  J1 trains: {bool(flags['j1'])}  "
+          f"|  Wout trains: {bool(flags['wout'])}", flush=True)
+    print(f"{'='*60}", flush=True)
+
+    per_seed = [run_one_seed(mode, s, cfg, ds) for s in SEEDS]
+
+    head_mat  = np.array([r["head_accs"]  for r in per_seed])
+    probe_mat = np.array([r["probe_accs"] for r in per_seed])
+
+    result = {
+        "mode":        mode,
+        "seeds":       SEEDS,
+        "epochs":      EPOCHS,
+        "per_seed":    per_seed,
+        "head_mean":   head_mat.mean(0).tolist(),
+        "head_std":    head_mat.std(0).tolist(),
+        "probe_mean":  probe_mat.mean(0).tolist(),
+        "probe_std":   probe_mat.std(0).tolist(),
+    }
+
+    if mode == "offline_wout":
+        offline_probes = [r["offline_probe_acc"] for r in per_seed]
+        offline_heads  = [r["offline_head_acc"]  for r in per_seed]
+        result["offline_probe_mean"] = float(np.mean(offline_probes))
+        result["offline_probe_std"]  = float(np.std(offline_probes))
+        result["offline_head_mean"]  = float(np.mean(offline_heads))
+        result["offline_head_std"]   = float(np.std(offline_heads))
+        print(f"\n  offline transfer — probe: {result['offline_probe_mean']:.4f} ± {result['offline_probe_std']:.4f}"
+              f"  head: {result['offline_head_mean']:.4f} ± {result['offline_head_std']:.4f}", flush=True)
+
+    print(f"\n  Head  final: mean={head_mat[:,-1].mean():.4f}  std={head_mat[:,-1].std():.4f}", flush=True)
+    print(f"  Probe final: mean={probe_mat[:,-1].mean():.4f}  std={probe_mat[:,-1].std():.4f}", flush=True)
+    return result
+
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", default="all",
-                        choices=list(MODE_FLAGS) + ["all"],
-                        help="Which ablation to run (default: all)")
+                        choices=list(MODE_FLAGS) + ["all"])
     args = parser.parse_args()
 
     with open(CFG_PATH) as f:
@@ -357,7 +302,7 @@ def main():
         result = run_mode(mode, cfg, ds)
         out_path = results_dir / f"ablation_{mode}.json"
         out_path.write_text(json.dumps(result, indent=2))
-        print(f"\n  Saved to {out_path}")
+        print(f"  Saved to {out_path}", flush=True)
 
 
 if __name__ == "__main__":

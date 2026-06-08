@@ -14,7 +14,7 @@ Run on cluster:
 """
 
 from __future__ import annotations
-import json, sys
+import json, sys, time
 from pathlib import Path
 
 import equinox as eqx
@@ -163,8 +163,13 @@ def eval_head(trainer, ds, key):
     return float(np.mean(accs)), key
 
 
-def run_one_seed(seed, cfg, ds):
-    print(f"\n{'='*50}\nSeed {seed}\n{'='*50}", flush=True)
+def fmt(seconds):
+    m, s = divmod(int(seconds), 60)
+    return f"{m}m{s:02d}s"
+
+
+def run_one_seed(seed, cfg, ds, seed_idx, n_seeds, t_script_start, epoch_times_all):
+    print(f"\n{'='*50}\nSeed {seed}  ({seed_idx+1}/{n_seeds})\n{'='*50}", flush=True)
     key = jax.random.PRNGKey(seed)
     key, mk = jax.random.split(key)
     state, orch = build_model(cfg, mk)
@@ -178,13 +183,26 @@ def run_one_seed(seed, cfg, ds):
         eval_n_iter=5,
     )
     head_accs, probe_accs = [], []
+    t_seed_start = time.time()
     for epoch in range(1, EPOCHS + 1):
+        t0 = time.time()
         trainer, key = train_epoch(trainer, ds, cfg, key)
         head_acc, key = eval_head(trainer, ds, key)
         probe_acc = run_probe(trainer, ds, key)
+        t_epoch = time.time() - t0
+        epoch_times_all.append(t_epoch)
+
+        elapsed = time.time() - t_script_start
+        epochs_done = seed_idx * EPOCHS + epoch
+        epochs_total = n_seeds * EPOCHS
+        avg_epoch = sum(epoch_times_all) / len(epoch_times_all)
+        eta = avg_epoch * (epochs_total - epochs_done)
+
         head_accs.append(head_acc)
         probe_accs.append(probe_acc)
-        print(f"  seed={seed}  epoch={epoch:2d}/{EPOCHS}  head={head_acc:.4f}  probe={probe_acc:.4f}", flush=True)
+        print(f"  seed={seed}  epoch={epoch:2d}/{EPOCHS}  head={head_acc:.4f}  probe={probe_acc:.4f}"
+              f"  [{fmt(t_epoch)}/epoch  elapsed={fmt(elapsed)}  eta={fmt(eta)}]", flush=True)
+    print(f"  seed={seed} done in {fmt(time.time()-t_seed_start)}", flush=True)
     return {"seed": seed, "head_accs": head_accs, "probe_accs": probe_accs}
 
 
@@ -201,7 +219,11 @@ def main():
                  linear_projection=None, rescale=True)
     ds.build(jax.random.PRNGKey(0))
 
-    per_seed = [run_one_seed(s, cfg, ds) for s in SEEDS]
+    t_script_start = time.time()
+    epoch_times_all = []
+    per_seed = [run_one_seed(s, cfg, ds, i, len(SEEDS), t_script_start, epoch_times_all)
+                for i, s in enumerate(SEEDS)]
+    print(f"\nTotal runtime: {fmt(time.time()-t_script_start)}", flush=True)
 
     head_mat  = np.array([r["head_accs"]  for r in per_seed])  # (n_seeds, epochs)
     probe_mat = np.array([r["probe_accs"] for r in per_seed])

@@ -28,7 +28,7 @@ Usage:
 """
 
 from __future__ import annotations
-import argparse, json, sys
+import argparse, json, sys, time
 from pathlib import Path
 
 import equinox as eqx
@@ -191,7 +191,12 @@ def eval_head(trainer, ds, key):
     return float(np.mean(accs)), key
 
 
-def run_one_seed(mode, seed, cfg, ds):
+def fmt(seconds):
+    m, s = divmod(int(seconds), 60)
+    return f"{m}m{s:02d}s"
+
+
+def run_one_seed(mode, seed, cfg, ds, seed_idx, n_seeds, t_script_start, epoch_times_all):
     flags = MODE_FLAGS[mode]
     key = jax.random.PRNGKey(seed)
     key, mk = jax.random.split(key)
@@ -211,8 +216,16 @@ def run_one_seed(mode, seed, cfg, ds):
         eval_n_iter=5,
     )
 
+    n_modes = len(MODE_FLAGS)
+    modes_list = list(MODE_FLAGS)
+    mode_idx = modes_list.index(mode)
+    epochs_total = n_modes * n_seeds * EPOCHS
+    epochs_before_this_mode = mode_idx * n_seeds * EPOCHS
+
     head_accs, probe_accs = [], []
+    t_seed_start = time.time()
     for epoch in range(1, EPOCHS + 1):
+        t0 = time.time()
         trainer, key = train_epoch(
             trainer, ds, cfg, key,
             decay_win=flags["decay_win"],
@@ -220,9 +233,19 @@ def run_one_seed(mode, seed, cfg, ds):
         )
         head_acc, key = eval_head(trainer, ds, key)
         probe_acc = run_probe(trainer, ds, key)
+        t_epoch = time.time() - t0
+        epoch_times_all.append(t_epoch)
+
+        elapsed = time.time() - t_script_start
+        epochs_done = epochs_before_this_mode + seed_idx * EPOCHS + epoch
+        avg_epoch = sum(epoch_times_all) / len(epoch_times_all)
+        eta = avg_epoch * (epochs_total - epochs_done)
+
         head_accs.append(head_acc)
         probe_accs.append(probe_acc)
-        print(f"  seed={seed}  epoch={epoch:2d}/{EPOCHS}  head={head_acc:.4f}  probe={probe_acc:.4f}", flush=True)
+        print(f"  seed={seed}  epoch={epoch:2d}/{EPOCHS}  head={head_acc:.4f}  probe={probe_acc:.4f}"
+              f"  [{fmt(t_epoch)}/epoch  elapsed={fmt(elapsed)}  eta={fmt(eta)}]", flush=True)
+    print(f"  seed={seed} done in {fmt(time.time()-t_seed_start)}", flush=True)
 
     result = {"seed": seed, "head_accs": head_accs, "probe_accs": probe_accs}
 
@@ -239,7 +262,7 @@ def run_one_seed(mode, seed, cfg, ds):
     return result
 
 
-def run_mode(mode, cfg, ds):
+def run_mode(mode, cfg, ds, t_script_start, epoch_times_all):
     print(f"\n{'='*60}", flush=True)
     print(f"MODE: {mode}  ({len(SEEDS)} seeds)", flush=True)
     flags = MODE_FLAGS[mode]
@@ -247,7 +270,8 @@ def run_mode(mode, cfg, ds):
           f"|  Wout trains: {bool(flags['wout'])}", flush=True)
     print(f"{'='*60}", flush=True)
 
-    per_seed = [run_one_seed(mode, s, cfg, ds) for s in SEEDS]
+    per_seed = [run_one_seed(mode, s, cfg, ds, i, len(SEEDS), t_script_start, epoch_times_all)
+                for i, s in enumerate(SEEDS)]
 
     head_mat  = np.array([r["head_accs"]  for r in per_seed])
     probe_mat = np.array([r["probe_accs"] for r in per_seed])
@@ -298,11 +322,14 @@ def main():
     results_dir = HERE / "results"
     results_dir.mkdir(exist_ok=True)
 
+    t_script_start = time.time()
+    epoch_times_all = []
     for mode in modes:
-        result = run_mode(mode, cfg, ds)
+        result = run_mode(mode, cfg, ds, t_script_start, epoch_times_all)
         out_path = results_dir / f"ablation_{mode}.json"
         out_path.write_text(json.dumps(result, indent=2))
         print(f"  Saved to {out_path}", flush=True)
+    print(f"\nTotal runtime: {fmt(time.time()-t_script_start)}", flush=True)
 
 
 if __name__ == "__main__":

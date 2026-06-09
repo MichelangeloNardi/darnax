@@ -4,10 +4,14 @@ Standard channel-entropy training on CIFAR-10.
 Win, J1, Wout all train online. 5 seeds x 10 epochs, best config.
 
 Per-epoch: head accuracy (Wout perceptron rule) + linear probe on J1 reps.
+           + diagnostics on a fixed held-out batch (weight norms, field fractions,
+             ABCD attractor similarity, autocorrelation matrix).
+Within-epoch: ABCD C-D similarity collected every DIAG_INTERVAL_BATCHES batches.
 
 Saves to:
-  experiments5/results/standard.json   — per-seed and mean±std results
-  experiments5/figures/standard.png    — mean±std accuracy curves
+  experiments5/results/standard.json             — per-seed head/probe results
+  experiments5/results/standard_diagnostics.json — per-seed, per-epoch diagnostics
+  experiments5/figures/standard.png              — mean±std accuracy curves
 
 Run on cluster:
   ~/miniforge3/envs/darnax_hpc/bin/python experiments5/standard_run.py
@@ -40,12 +44,22 @@ from darnax.orchestrators.sequential import SequentialOrchestrator
 from darnax.states.sequential import SequentialState
 from darnax.trainers.dynamical import DynamicalTrainer
 
+from diagnostics import (
+    collect_autocorr_matrix,
+    collect_weight_norms,
+    collect_field_contributions,
+    collect_abcd_states,
+)
+
 SEEDS        = [0, 42, 123, 7, 999]
 EPOCHS       = 10
 C, KSIZE     = 16, 5
 H, W, POOL   = 32, 32, 8
 PROBE_EPOCHS = 20
 PROBE_WD     = 1.433e-4
+
+# Collect ABCD within-epoch every N training batches (set to None to disable)
+DIAG_INTERVAL_BATCHES = 200
 
 
 def build_model(cfg, key):
@@ -143,10 +157,17 @@ def run_probe(trainer, ds, key):
     return best_test
 
 
-def train_epoch(trainer, ds, cfg, key):
+def train_epoch(trainer, ds, cfg, key, abcd_hook=None):
+    """Train one epoch. If abcd_hook is set, call it every DIAG_INTERVAL_BATCHES batches.
+
+    abcd_hook(trainer, batch_idx, key) is called with the current trainer and
+    the absolute-within-epoch batch index. The hook does not modify trainer.
+    """
     decay = cfg["kernel_decay_rate"]
-    for xb, yb in ds:
+    for batch_idx, (xb, yb) in enumerate(ds):
         key = trainer.train_step(to_hwc(xb), yb, key)
+        if abcd_hook is not None and (batch_idx + 1) % DIAG_INTERVAL_BATCHES == 0:
+            abcd_hook(trainer, batch_idx + 1, key)
     for path in [lambda o: o.lmap[1][0].kernel, lambda o: o.lmap[1][1].kernel]:
         trainer.orchestrator = eqx.tree_at(
             path, trainer.orchestrator,
@@ -168,7 +189,7 @@ def fmt(seconds):
     return f"{m}m{s:02d}s"
 
 
-def run_one_seed(seed, cfg, ds, seed_idx, n_seeds, t_script_start, epoch_times_all):
+def run_one_seed(seed, cfg, ds, seed_idx, n_seeds, t_script_start, epoch_times_all, diag_rng):
     print(f"\n{'='*50}\nSeed {seed}  ({seed_idx+1}/{n_seeds})\n{'='*50}", flush=True)
     key = jax.random.PRNGKey(seed)
     key, mk = jax.random.split(key)
@@ -182,28 +203,90 @@ def run_one_seed(seed, cfg, ds, seed_idx, n_seeds, t_script_start, epoch_times_a
         train_free_n_iter=cfg["free_n_iter"],
         eval_n_iter=5,
     )
+    warmup_n  = 1
+    clamped_n = cfg["clamped_n_iter"]
+    free_n    = cfg["free_n_iter"]
+
+    # Fixed diagnostic batch: first test batch, same across all epochs for this seed
+    diag_x, diag_y = next(iter(ds.iter_test()))
+    diag_x = to_hwc(diag_x)
+
     head_accs, probe_accs = [], []
+    per_epoch_diag = []
+    within_epoch_abcd = []
+
     t_seed_start = time.time()
     for epoch in range(1, EPOCHS + 1):
         t0 = time.time()
-        trainer, key = train_epoch(trainer, ds, cfg, key)
+
+        # Within-epoch ABCD hook: collect CD similarity every DIAG_INTERVAL_BATCHES batches
+        epoch_abcd_records = []
+        def abcd_hook(tr, batch_idx, k):
+            rec = collect_abcd_states(
+                tr.orchestrator, tr.state, diag_x, diag_y, diag_rng,
+                warmup_n, clamped_n, free_n,
+            )
+            rec["batch_idx"] = batch_idx
+            epoch_abcd_records.append(rec)
+
+        trainer, key = train_epoch(trainer, ds, cfg, key,
+                                   abcd_hook=abcd_hook if DIAG_INTERVAL_BATCHES else None)
+        for rec in epoch_abcd_records:
+            within_epoch_abcd.append({"epoch": epoch, **rec})
+
         head_acc, key = eval_head(trainer, ds, key)
         probe_acc = run_probe(trainer, ds, key)
+
+        # Per-epoch diagnostics on fixed batch
+        t_diag = time.time()
+        wn   = collect_weight_norms(trainer.orchestrator)
+        ff   = collect_field_contributions(
+            trainer.orchestrator, trainer.state, diag_x, diag_y, diag_rng, warmup_n
+        )
+        abcd = collect_abcd_states(
+            trainer.orchestrator, trainer.state, diag_x, diag_y, diag_rng,
+            warmup_n, clamped_n, free_n,
+        )
+        sim, labels, _ = collect_autocorr_matrix(
+            trainer.orchestrator, trainer.state, diag_x, diag_y, diag_rng,
+            warmup_n, clamped_n, free_n,
+        )
+        t_diag = time.time() - t_diag
+
+        per_epoch_diag.append({
+            "epoch":              epoch,
+            "weight_norms":       wn,
+            "field_fractions":    ff,
+            "abcd":               abcd,
+            "autocorr_matrix":    sim.tolist(),
+            "autocorr_labels":    labels,
+        })
+
         t_epoch = time.time() - t0
         epoch_times_all.append(t_epoch)
 
         elapsed = time.time() - t_script_start
-        epochs_done = seed_idx * EPOCHS + epoch
+        epochs_done  = seed_idx * EPOCHS + epoch
         epochs_total = n_seeds * EPOCHS
-        avg_epoch = sum(epoch_times_all) / len(epoch_times_all)
-        eta = avg_epoch * (epochs_total - epochs_done)
+        avg_epoch    = sum(epoch_times_all) / len(epoch_times_all)
+        eta          = avg_epoch * (epochs_total - epochs_done)
 
         head_accs.append(head_acc)
         probe_accs.append(probe_acc)
-        print(f"  seed={seed}  epoch={epoch:2d}/{EPOCHS}  head={head_acc:.4f}  probe={probe_acc:.4f}"
-              f"  [{fmt(t_epoch)}/epoch  elapsed={fmt(elapsed)}  eta={fmt(eta)}]", flush=True)
+        print(
+            f"  seed={seed}  epoch={epoch:2d}/{EPOCHS}  head={head_acc:.4f}  probe={probe_acc:.4f}"
+            f"  cd={abcd['cd_sim_mean']:.3f}  diag={fmt(t_diag)}"
+            f"  [{fmt(t_epoch)}/epoch  elapsed={fmt(elapsed)}  eta={fmt(eta)}]",
+            flush=True,
+        )
     print(f"  seed={seed} done in {fmt(time.time()-t_seed_start)}", flush=True)
-    return {"seed": seed, "head_accs": head_accs, "probe_accs": probe_accs}
+    return {
+        "seed":             seed,
+        "head_accs":        head_accs,
+        "probe_accs":       probe_accs,
+        "per_epoch_diag":   per_epoch_diag,
+        "within_epoch_abcd": within_epoch_abcd,
+    }
 
 
 def main():
@@ -219,19 +302,25 @@ def main():
                  linear_projection=None, rescale=True)
     ds.build(jax.random.PRNGKey(0))
 
+    # Fixed RNG for all diagnostic calls (reproducible across epochs and seeds)
+    diag_rng = jax.random.PRNGKey(42)
+
     t_script_start = time.time()
     epoch_times_all = []
-    per_seed = [run_one_seed(s, cfg, ds, i, len(SEEDS), t_script_start, epoch_times_all)
-                for i, s in enumerate(SEEDS)]
+    per_seed = [
+        run_one_seed(s, cfg, ds, i, len(SEEDS), t_script_start, epoch_times_all, diag_rng)
+        for i, s in enumerate(SEEDS)
+    ]
     print(f"\nTotal runtime: {fmt(time.time()-t_script_start)}", flush=True)
 
-    head_mat  = np.array([r["head_accs"]  for r in per_seed])  # (n_seeds, epochs)
+    head_mat  = np.array([r["head_accs"]  for r in per_seed])
     probe_mat = np.array([r["probe_accs"] for r in per_seed])
 
     out = {
         "seeds":       SEEDS,
         "epochs":      EPOCHS,
-        "per_seed":    per_seed,
+        "per_seed":    [{"seed": r["seed"], "head_accs": r["head_accs"], "probe_accs": r["probe_accs"]}
+                        for r in per_seed],
         "head_mean":   head_mat.mean(0).tolist(),
         "head_std":    head_mat.std(0).tolist(),
         "probe_mean":  probe_mat.mean(0).tolist(),
@@ -249,6 +338,27 @@ def main():
     out_path = results_dir / "standard.json"
     out_path.write_text(json.dumps(out, indent=2))
     print(f"Saved to {out_path}", flush=True)
+
+    # Diagnostics JSON (kept separate from standard.json to preserve backward compatibility)
+    diag_out = {
+        "seeds":                 SEEDS,
+        "epochs":                EPOCHS,
+        "warmup_n":              1,
+        "clamped_n":             cfg["clamped_n_iter"],
+        "free_n":                cfg["free_n_iter"],
+        "diag_interval_batches": DIAG_INTERVAL_BATCHES,
+        "per_seed": [
+            {
+                "seed":              r["seed"],
+                "per_epoch_diag":    r["per_epoch_diag"],
+                "within_epoch_abcd": r["within_epoch_abcd"],
+            }
+            for r in per_seed
+        ],
+    }
+    diag_path = results_dir / "standard_diagnostics.json"
+    diag_path.write_text(json.dumps(diag_out, indent=2))
+    print(f"Diagnostics saved to {diag_path}", flush=True)
 
     ep = np.arange(1, EPOCHS + 1)
     fig, ax = plt.subplots(figsize=(7, 4))

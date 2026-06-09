@@ -28,9 +28,9 @@ COLORS = {
 }
 LABELS = {
     "standard":        "Standard (Win+J1+Wout)",
-    "offline_wout":    "Offline Wout",
+    "offline_wout":    "Offline Wout (Win+J train, Wout offline perceptron)",
     "random_baseline": "Random baseline (Wout only)",
-    "j_only":          "J-only (frozen Win)",
+    "j_only":          "J-only (Win primes once, λ=0 after)",
 }
 
 
@@ -61,9 +61,6 @@ plot_band(ax, epochs, std["probe_mean"],  std["probe_std"],  COLORS["standard"],
 plot_band(ax, epochs, off["probe_mean"],  off["probe_std"],  COLORS["offline_wout"],    LABELS["offline_wout"],    "--")
 plot_band(ax, epochs, rand["probe_mean"], rand["probe_std"], COLORS["random_baseline"], LABELS["random_baseline"], ":")
 plot_band(ax, epochs, jonly["probe_mean"],jonly["probe_std"],COLORS["j_only"],          LABELS["j_only"],          "-.")
-ax.axhline(off["offline_probe_mean"], color=COLORS["offline_wout"], linewidth=1,
-           linestyle="--", alpha=0.5,
-           label=f"Offline Wout transfer ({off['offline_probe_mean']:.3f} ± {off['offline_probe_std']:.3f})")
 ax.set_xlabel("Epoch"); ax.set_ylabel("Linear probe accuracy (test)")
 ax.set_title(f"Linear probe accuracy — ablation comparison ({len(std['seeds'])} seeds ± 1 std)")
 ax.legend(fontsize=8, loc="lower right")
@@ -92,7 +89,7 @@ fig.savefig(FIGURES / "standard_gap.png", dpi=150); plt.close(fig)
 print("saved standard_gap.png")
 
 # ── 4. summary_bar.png ───────────────────────────────────────────────────────
-labels_short = ["Standard", "Offline\nWout\n(transfer)", "Random\nbaseline", "J-only"]
+labels_short = ["Standard", "Offline\nWout\n(perceptron)", "Random\nbaseline", "J-only\n(Win primes\nonce)"]
 head_means = [
     np.array(std["head_mean"])[-1],
     off["offline_head_mean"],
@@ -107,13 +104,13 @@ head_stds = [
 ]
 probe_means = [
     np.array(std["probe_mean"])[-1],
-    off["offline_probe_mean"],
+    np.array(off["probe_mean"])[-1],
     np.array(rand["probe_mean"])[-1],
     np.array(jonly["probe_mean"])[-1],
 ]
 probe_stds = [
     np.array(std["probe_std"])[-1],
-    off["offline_probe_std"],
+    np.array(off["probe_std"])[-1],
     np.array(rand["probe_std"])[-1],
     np.array(jonly["probe_std"])[-1],
 ]

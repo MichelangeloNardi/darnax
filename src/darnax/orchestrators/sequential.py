@@ -180,20 +180,14 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
             messages = self._compute_messages(senders_group, state, rng=sub)
 
             # Lambda decay: attenuate external contributions to the hidden layer.
-            # lambda_win/lambda_back are static Python floats (filter_jit treats them
-            # as compile-time constants), so these if-branches are resolved at trace
-            # time with no runtime overhead. The == 0.0 branch avoids 0.0**0 == 1.0.
+            # lambda_win/lambda_back are static Python floats resolved at trace time.
+            # 0.0**t_win is intentionally correct: 0^0=1 (t_win=0, first step of warmup)
+            # lets Win prime J once, then 0^n=0 for all subsequent steps.
             if receiver_idx == 1:
-                if 0 in messages:
-                    if self.lambda_win == 0.0:
-                        messages[0] = jnp.zeros_like(messages[0])
-                    elif self.lambda_win < 1.0:
-                        messages[0] = messages[0] * (self.lambda_win ** t_win)
-                if 2 in messages:
-                    if self.lambda_back == 0.0:
-                        messages[2] = jnp.zeros_like(messages[2])
-                    elif self.lambda_back < 1.0:
-                        messages[2] = messages[2] * (self.lambda_back ** t_back)
+                if 0 in messages and self.lambda_win < 1.0:
+                    messages[0] = messages[0] * (self.lambda_win ** t_win)
+                if 2 in messages and self.lambda_back < 1.0:
+                    messages[2] = messages[2] * (self.lambda_back ** t_back)
 
             aggregated: Array = self.lmap[receiver_idx, receiver_idx].reduce(messages)  # type: ignore
 

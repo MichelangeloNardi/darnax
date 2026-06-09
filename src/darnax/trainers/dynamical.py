@@ -1,15 +1,15 @@
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import Any, Generic, TypeVar
 
 import equinox as eqx
 import jax.numpy as jnp
-from jax import Array
+from jax import Array, lax
 from optax import GradientTransformation
 
 from darnax.orchestrators.interface import AbstractOrchestrator
 from darnax.states.interface import State
 from darnax.trainers.interface import Trainer
-from darnax.trainers.utils import batch_accuracy, scan_n
+from darnax.trainers.utils import batch_accuracy
 from darnax.utils.typing import PyTree
 
 StateT = TypeVar("StateT", bound=State)
@@ -99,6 +99,40 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
         self.ctx = self.validate_ctx(self.ctx)
 
     @staticmethod
+    def _phase_scan(
+        step_fn: Callable,
+        state_rng: tuple,
+        n_iter: int,
+        t_win_start: int = 0,
+        t_back_xs: Array | None = None,
+        **step_kwargs: Any,
+    ) -> tuple:
+        """Run step_fn for n_iter steps via lax.scan, passing t_win and t_back.
+
+        t_win is a global counter that does not reset between phases:
+          xs = jnp.arange(t_win_start, t_win_start + n_iter)
+
+        t_back is an independent counter for W_back decay. Pass t_back_xs as
+        jnp.arange(n_iter) for the clamped phase (where t_back starts at 0),
+        or leave None (t_back=0 constant) for phases where W_back is absent.
+        """
+        t_win_arr = jnp.arange(t_win_start, t_win_start + n_iter)
+        if t_back_xs is not None:
+            xs = (t_win_arr, t_back_xs)
+
+            def body(carry: tuple, ts: tuple) -> tuple[tuple, None]:
+                t_win, t_back = ts
+                return step_fn(*carry, t_win=t_win, t_back=t_back, **step_kwargs), None
+        else:
+            def body(carry: tuple, t_win: Array) -> tuple[tuple, None]:  # type: ignore[misc]
+                return step_fn(*carry, t_win=t_win, t_back=0, **step_kwargs), None
+
+            xs = t_win_arr
+
+        final_carry, _ = lax.scan(body, state_rng, xs=xs)
+        return final_carry
+
+    @staticmethod
     def _train_step_impl(
         x: Array,
         y: Array,
@@ -143,15 +177,24 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
         # 1) per-batch init
         state = state.init(x, y)
 
-        # 2) rollout phases
-        (state, rng), _ = scan_n(
-            orchestrator.step, (state, rng), n_iter=ctx["warmup_iter"], filter_messages="forward"
+        # 2) rollout phases with two independent step counters:
+        #    t_win: global across all phases (never resets within a batch)
+        #    t_back: starts at 0 at clamped onset; absent elsewhere so passed as 0
+        warmup_n  = ctx["warmup_iter"]
+        clamped_n = ctx["clamped_iter"]
+        free_n    = ctx["free_iter"]
+        (state, rng) = DynamicalTrainer._phase_scan(
+            orchestrator.step, (state, rng), warmup_n,
+            t_win_start=0, filter_messages="forward",
         )
-        (state, rng), _ = scan_n(
-            orchestrator.step, (state, rng), n_iter=ctx["clamped_iter"], filter_messages="all"
+        (state, rng) = DynamicalTrainer._phase_scan(
+            orchestrator.step, (state, rng), clamped_n,
+            t_win_start=warmup_n, t_back_xs=jnp.arange(clamped_n),
+            filter_messages="all",
         )
-        (state, rng), _ = scan_n(
-            orchestrator.step, (state, rng), n_iter=ctx["free_iter"], filter_messages="forward"
+        (state, rng) = DynamicalTrainer._phase_scan(
+            orchestrator.step, (state, rng), free_n,
+            t_win_start=warmup_n + clamped_n, filter_messages="forward",
         )
 
         # 3) local/backprop deltas shaped like orchestrator
@@ -214,12 +257,16 @@ class DynamicalTrainer(Trainer[OrchestratorT, StateT], Generic[OrchestratorT, St
         # 1) per-batch init
         state = state.init(x, y)
 
-        # 2) warmup + free eval dynamics
-        (state, rng), _ = scan_n(
-            orchestrator.step, (state, rng), n_iter=ctx["warmup_iter"], filter_messages="forward"
+        # 2) warmup + free eval dynamics; t_win is global across both phases
+        warmup_n = ctx["warmup_iter"]
+        eval_n   = ctx["eval_iter"]
+        (state, rng) = DynamicalTrainer._phase_scan(
+            orchestrator.step, (state, rng), warmup_n,
+            t_win_start=0, filter_messages="forward",
         )
-        (state, rng), _ = scan_n(
-            orchestrator.step, (state, rng), n_iter=ctx["eval_iter"], filter_messages="forward"
+        (state, rng) = DynamicalTrainer._phase_scan(
+            orchestrator.step, (state, rng), eval_n,
+            t_win_start=warmup_n, filter_messages="forward",
         )
 
         # 3) prediction

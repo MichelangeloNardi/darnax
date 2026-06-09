@@ -74,12 +74,16 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
     lmap: LayerMap  # not static; module parameters will be updated externally
     field_momentum: float
     zero_sign_value: float
+    lambda_win: float
+    lambda_back: float
 
     def __init__(
         self,
         layers: LayerMap,
         field_momentum: float = 0.0,
         zero_sign_value: float = 1.0,
+        lambda_win: float = 1.0,
+        lambda_back: float = 1.0,
     ):
         """Initialize the orchestrator from a layermap.
 
@@ -92,11 +96,19 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
             0.0 (default) means no momentum (new field is used as-is).
         zero_sign_value : float, optional
             Value substituted for zeros after sign activation. Default 1.0.
+        lambda_win : float, optional
+            Per-step decay factor for the W_in message within each phase.
+            At step t, W_in is scaled by lambda_win**t. Default 1.0 (no decay).
+        lambda_back : float, optional
+            Per-step decay factor for the W_back message within the clamped phase.
+            At step t, W_back is scaled by lambda_back**t. Default 1.0 (no decay).
 
         """
         self.lmap = layers
         self.field_momentum = float(field_momentum)
         self.zero_sign_value = float(zero_sign_value)
+        self.lambda_win = float(lambda_win)
+        self.lambda_back = float(lambda_back)
 
     def _apply_field_momentum(self, old_field: Array, new_field: Array) -> Array:
         tau = self.field_momentum
@@ -119,6 +131,8 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         *,
         filter_messages: Literal["all", "forward", "backward", "inference"] = "all",
         skip_output_state: bool = True,
+        t_win: int | Array = 0,
+        t_back: int | Array = 0,
     ) -> tuple[SequentialState, KeyArray]:
         """Run one forward/update sweep for all receivers **except output**.
 
@@ -143,6 +157,15 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
             If true, we only update internal states (we exclude output state (-1)).
             The idea is that somehow the output is clamped and in some learning phases
             updating it is useless. By setting skip_readout=True we avoid the computation.
+        t_win : int or Array, optional
+            Global step index for W_in decay. Does not reset between phases within
+            a batch: it increments from 0 across warmup → clamped → free.
+            W_in is scaled by lambda_win**t_win. Defaults to 0 (no decay).
+        t_back : int or Array, optional
+            Step index for W_back decay. Resets to 0 at the start of the clamped
+            phase. W_back is scaled by lambda_back**t_back. Only meaningful during
+            the clamped phase since W_back is absent in forward-only phases.
+            Defaults to 0 (no decay).
 
         Returns
         -------
@@ -155,6 +178,23 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
         ):
             rng, sub = jax.random.split(rng)
             messages = self._compute_messages(senders_group, state, rng=sub)
+
+            # Lambda decay: attenuate external contributions to the hidden layer.
+            # lambda_win/lambda_back are static Python floats (filter_jit treats them
+            # as compile-time constants), so these if-branches are resolved at trace
+            # time with no runtime overhead. The == 0.0 branch avoids 0.0**0 == 1.0.
+            if receiver_idx == 1:
+                if 0 in messages:
+                    if self.lambda_win == 0.0:
+                        messages[0] = jnp.zeros_like(messages[0])
+                    elif self.lambda_win < 1.0:
+                        messages[0] = messages[0] * (self.lambda_win ** t_win)
+                if 2 in messages:
+                    if self.lambda_back == 0.0:
+                        messages[2] = jnp.zeros_like(messages[2])
+                    elif self.lambda_back < 1.0:
+                        messages[2] = messages[2] * (self.lambda_back ** t_back)
+
             aggregated: Array = self.lmap[receiver_idx, receiver_idx].reduce(messages)  # type: ignore
 
             prev_field = state.fields[receiver_idx]
@@ -309,6 +349,8 @@ class SequentialOrchestrator(AbstractOrchestrator[SequentialState]):
             layers=self._backward_direct(state, activations, target_state, gate),
             field_momentum=self.field_momentum,
             zero_sign_value=self.zero_sign_value,
+            lambda_win=self.lambda_win,
+            lambda_back=self.lambda_back,
         )
 
     # ---------------------------- internals ----------------------------

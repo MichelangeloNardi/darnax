@@ -52,22 +52,24 @@ from darnax.orchestrators.sequential import SequentialOrchestrator
 from darnax.states.sequential import SequentialState
 from darnax.trainers.dynamical import DynamicalTrainer
 
-SEEDS        = [0, 42, 123, 7, 999]
-EPOCHS       = 10
-C, KSIZE     = 16, 5
-H, W, POOL   = 32, 32, 8
-PROBE_EPOCHS = 20
-PROBE_WD     = 1.433e-4
+SEEDS             = [0, 42, 123, 7, 999]
+EPOCHS            = 10
+WOUT_OFFLINE_EPOCHS = 10   # epochs to train Wout offline with perceptron rule
+C, KSIZE          = 16, 5
+H, W, POOL        = 32, 32, 8
+PROBE_EPOCHS      = 20
+PROBE_WD          = 1.433e-4
 
+# lambda_win=0.0 means Win message is zeroed out at every step (extreme decay)
 MODE_FLAGS = {
-    #                       lr_win  lr_j   lr_wout  decay_win  decay_j1
-    "offline_wout":    dict(win=1,  j1=1,  wout=0,  decay_win=True,  decay_j1=True),
-    "random_baseline": dict(win=0,  j1=0,  wout=1,  decay_win=False, decay_j1=False),
-    "j_only":          dict(win=0,  j1=1,  wout=1,  decay_win=False, decay_j1=True),
+    #                       lr_win  lr_j   lr_wout  decay_win  decay_j1  lambda_win
+    "offline_wout":    dict(win=1,  j1=1,  wout=0,  decay_win=True,  decay_j1=True,  lambda_win=1.0),
+    "random_baseline": dict(win=0,  j1=0,  wout=1,  decay_win=False, decay_j1=False, lambda_win=1.0),
+    "j_only":          dict(win=0,  j1=1,  wout=1,  decay_win=False, decay_j1=True,  lambda_win=0.0),
 }
 
 
-def build_model(cfg, key):
+def build_model(cfg, key, lambda_win=1.0):
     keys = jax.random.split(key, 5)
     layer_map = LayerMap.from_dict({
         1: {
@@ -88,7 +90,9 @@ def build_model(cfg, key):
             2: OutputLayer(),
         },
     })
-    return SequentialState([(H, W, 3), (H, W, C), 10]), SequentialOrchestrator(layers=layer_map)
+    return SequentialState([(H, W, 3), (H, W, C), 10]), SequentialOrchestrator(
+        layers=layer_map, lambda_win=lambda_win
+    )
 
 
 def make_optimizer(orchestrator, cfg, lr_win_active, lr_j_active, lr_wout_active):
@@ -124,7 +128,7 @@ def pool_j1(h):
     return h.reshape(N, H // POOL, POOL, W // POOL, POOL, C).mean(axis=(2, 4)).reshape(N, -1)
 
 
-def run_probe(trainer, ds, key, return_weights=False):
+def run_probe(trainer, ds, key):
     reps_tr, lbl_tr, reps_te, lbl_te = [], [], [], []
     for xb, yb in ds:
         key, _ = trainer.eval_step(to_hwc(xb), yb, key)
@@ -146,7 +150,7 @@ def run_probe(trainer, ds, key, return_weights=False):
     loader = DataLoader(TensorDataset(X_tr, y_tr), batch_size=256, shuffle=True)
     crit   = nn.CrossEntropyLoss()
 
-    best_test, best_W = 0.0, None
+    best_test = 0.0
     for _ in range(PROBE_EPOCHS):
         probe.train()
         for xb_t, yb_t in loader:
@@ -157,12 +161,8 @@ def run_probe(trainer, ds, key, return_weights=False):
         probe.eval()
         with torch.no_grad():
             te = (probe(X_te.to(device)).argmax(1) == y_te.to(device)).float().mean().item()
-        if te > best_test:
-            best_test = te
-            best_W = probe.weight.detach().cpu().numpy()  # (10, 256)
+        best_test = max(best_test, te)
 
-    if return_weights:
-        return best_test, best_W.T  # (256, 10)
     return best_test
 
 
@@ -200,7 +200,7 @@ def run_one_seed(mode, seed, cfg, ds, seed_idx, n_seeds, t_script_start, epoch_t
     flags = MODE_FLAGS[mode]
     key = jax.random.PRNGKey(seed)
     key, mk = jax.random.split(key)
-    state, orch = build_model(cfg, mk)
+    state, orch = build_model(cfg, mk, lambda_win=flags["lambda_win"])
     opt, opt_state = make_optimizer(
         orch, cfg,
         lr_win_active=flags["win"],
@@ -250,14 +250,29 @@ def run_one_seed(mode, seed, cfg, ds, seed_idx, n_seeds, t_script_start, epoch_t
     result = {"seed": seed, "head_accs": head_accs, "probe_accs": probe_accs}
 
     if mode == "offline_wout":
-        offline_acc, W_opt = run_probe(trainer, ds, key, return_weights=True)
-        trainer.orchestrator = eqx.tree_at(
-            lambda o: o.lmap[2][1].W, trainer.orchestrator, jnp.array(W_opt),
+        # Train Wout offline with the perceptron rule (Win+J frozen, same rule as online)
+        # This answers: "how well can Wout learn given fixed final representations?"
+        print(f"  [offline Wout] training with perceptron rule for {WOUT_OFFLINE_EPOCHS} epochs", flush=True)
+        t_offline_start = time.time()
+        opt2, opt2_state = make_optimizer(
+            trainer.orchestrator, cfg,
+            lr_win_active=False, lr_j_active=False, lr_wout_active=True,
         )
-        offline_head_acc, _ = eval_head(trainer, ds, key)
-        print(f"  [offline transfer] probe={offline_acc:.4f}  head={offline_head_acc:.4f}", flush=True)
-        result["offline_probe_acc"] = offline_acc
-        result["offline_head_acc"]  = offline_head_acc
+        trainer2 = DynamicalTrainer(
+            orchestrator=trainer.orchestrator, state=trainer.state,
+            optimizer=opt2, optimizer_state=opt2_state,
+            warmup_n_iter=1,
+            train_clamped_n_iter=cfg["clamped_n_iter"],
+            train_free_n_iter=cfg["free_n_iter"],
+            eval_n_iter=5,
+        )
+        for ep in range(1, WOUT_OFFLINE_EPOCHS + 1):
+            trainer2, key = train_epoch(trainer2, ds, cfg, key, decay_win=False, decay_j1=False)
+            h, key = eval_head(trainer2, ds, key)
+            print(f"    offline epoch {ep:2d}/{WOUT_OFFLINE_EPOCHS}  head={h:.4f}", flush=True)
+        offline_head_acc, key = eval_head(trainer2, ds, key)
+        print(f"  [offline Wout done] head={offline_head_acc:.4f}  ({fmt(time.time()-t_offline_start)})", flush=True)
+        result["offline_head_acc"] = offline_head_acc
 
     return result
 
@@ -288,14 +303,11 @@ def run_mode(mode, cfg, ds, t_script_start, epoch_times_all):
     }
 
     if mode == "offline_wout":
-        offline_probes = [r["offline_probe_acc"] for r in per_seed]
-        offline_heads  = [r["offline_head_acc"]  for r in per_seed]
-        result["offline_probe_mean"] = float(np.mean(offline_probes))
-        result["offline_probe_std"]  = float(np.std(offline_probes))
-        result["offline_head_mean"]  = float(np.mean(offline_heads))
-        result["offline_head_std"]   = float(np.std(offline_heads))
-        print(f"\n  offline transfer — probe: {result['offline_probe_mean']:.4f} ± {result['offline_probe_std']:.4f}"
-              f"  head: {result['offline_head_mean']:.4f} ± {result['offline_head_std']:.4f}", flush=True)
+        offline_heads = [r["offline_head_acc"] for r in per_seed]
+        result["offline_head_mean"] = float(np.mean(offline_heads))
+        result["offline_head_std"]  = float(np.std(offline_heads))
+        print(f"\n  offline Wout (perceptron rule) — head: "
+              f"{result['offline_head_mean']:.4f} ± {result['offline_head_std']:.4f}", flush=True)
 
     print(f"\n  Head  final: mean={head_mat[:,-1].mean():.4f}  std={head_mat[:,-1].std():.4f}", flush=True)
     print(f"  Probe final: mean={probe_mat[:,-1].mean():.4f}  std={probe_mat[:,-1].std():.4f}", flush=True)

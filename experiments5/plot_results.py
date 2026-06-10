@@ -41,11 +41,14 @@ def plot_band(ax, epochs, mean, std, color, label, ls="-"):
 
 
 # ── 1. comparison_head.png ───────────────────────────────────────────────────
+# offline_wout per-epoch values are meaningless (Wout frozen at random init during
+# those epochs). Show only the final offline head accuracy as a dashed reference line.
 fig, ax = plt.subplots(figsize=(8, 4.5))
 plot_band(ax, epochs, std["head_mean"],  std["head_std"],  COLORS["standard"],        LABELS["standard"])
-plot_band(ax, epochs, off["head_mean"],  off["head_std"],  COLORS["offline_wout"],    LABELS["offline_wout"],    "--")
 plot_band(ax, epochs, rand["head_mean"], rand["head_std"], COLORS["random_baseline"], LABELS["random_baseline"], ":")
 plot_band(ax, epochs, jonly["head_mean"],jonly["head_std"],COLORS["j_only"],          LABELS["j_only"],          "-.")
+ax.axhline(off["offline_head_mean"], color=COLORS["offline_wout"], linestyle="--", linewidth=2,
+           label=f"Offline Wout (perceptron, final) = {off['offline_head_mean']:.3f}")
 ax.set_xlabel("Epoch"); ax.set_ylabel("Head accuracy (test)")
 ax.set_title(f"Head accuracy — ablation comparison ({len(std['seeds'])} seeds ± 1 std)")
 ax.legend(fontsize=8, loc="lower left")
@@ -56,9 +59,9 @@ fig.savefig(FIGURES / "comparison_head.png", dpi=150); plt.close(fig)
 print("saved comparison_head.png")
 
 # ── 2. comparison_probe.png ──────────────────────────────────────────────────
+# offline_wout trains Win+J identically to standard, so its probe is redundant.
 fig, ax = plt.subplots(figsize=(8, 4.5))
 plot_band(ax, epochs, std["probe_mean"],  std["probe_std"],  COLORS["standard"],        LABELS["standard"])
-plot_band(ax, epochs, off["probe_mean"],  off["probe_std"],  COLORS["offline_wout"],    LABELS["offline_wout"],    "--")
 plot_band(ax, epochs, rand["probe_mean"], rand["probe_std"], COLORS["random_baseline"], LABELS["random_baseline"], ":")
 plot_band(ax, epochs, jonly["probe_mean"],jonly["probe_std"],COLORS["j_only"],          LABELS["j_only"],          "-.")
 ax.set_xlabel("Epoch"); ax.set_ylabel("Linear probe accuracy (test)")

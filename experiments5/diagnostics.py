@@ -14,6 +14,56 @@ from __future__ import annotations
 import numpy as np
 
 
+# ── internal helpers ──────────────────────────────────────────────────────────
+
+def _cosine_per_image(a, b):
+    na = np.linalg.norm(a, axis=1) + 1e-8
+    nb = np.linalg.norm(b, axis=1) + 1e-8
+    return (a * b).sum(axis=1) / (na * nb)
+
+
+def _run_abcd(orch, state_template, x, y, rng, warmup_n, clamped_n, free_n):
+    """Run warmup→clamped→free and free-from-A, return (j1_a, j1_b, j1_c, j1_d).
+
+    Each array has shape (N, D) float32 where D = H*W*C (J1 flattened).
+    """
+    state_0 = state_template.init(x, y)
+
+    state_a, rng_a = state_0, rng
+    for _ in range(warmup_n):
+        state_a, rng_a = orch.step(state_a, rng=rng_a, filter_messages="forward")
+
+    state_b, rng_b = state_a, rng_a
+    for _ in range(clamped_n):
+        state_b, rng_b = orch.step(state_b, rng=rng_b, filter_messages="all")
+
+    state_c, rng_c = state_b, rng_b
+    for _ in range(free_n):
+        state_c, rng_c = orch.step(state_c, rng=rng_c, filter_messages="forward")
+
+    state_d, rng_d = state_a, rng_a
+    for _ in range(free_n):
+        state_d, rng_d = orch.step(state_d, rng=rng_d, filter_messages="forward")
+
+    N = x.shape[0]
+    return tuple(
+        np.asarray(s[1]).reshape(N, -1).astype(np.float32)
+        for s in (state_a, state_b, state_c, state_d)
+    )
+
+
+def _pairwise_cosine_matrix(j1_list):
+    """(n, n) mean per-image cosine similarity matrix over a list of (N, D) arrays."""
+    n = len(j1_list)
+    mat = np.zeros((n, n), dtype=np.float32)
+    for i in range(n):
+        for j in range(n):
+            mat[i, j] = float(_cosine_per_image(j1_list[i], j1_list[j]).mean())
+    return mat
+
+
+# ── public API ────────────────────────────────────────────────────────────────
+
 def collect_autocorr_matrix(orch, state_template, x, y, rng, warmup_n, clamped_n, free_n):
     """Step warmup→clamped→free one step at a time and compute pairwise J1 cosine sims.
 
@@ -45,16 +95,8 @@ def collect_autocorr_matrix(orch, state_template, x, y, rng, warmup_n, clamped_n
         states.append(np.asarray(state[1]))
         labels.append(f"F{i + 1}")
 
-    n = len(states)
-    flat = [s.reshape(s.shape[0], -1).astype(np.float32) for s in states]  # (B, D)
-    sim = np.zeros((n, n), dtype=np.float32)
-    for i in range(n):
-        for j in range(n):
-            a, b = flat[i], flat[j]
-            na = np.linalg.norm(a, axis=1, keepdims=True) + 1e-8
-            nb = np.linalg.norm(b, axis=1, keepdims=True) + 1e-8
-            sim[i, j] = float(((a / na) * (b / nb)).sum(axis=1).mean())
-
+    flat = [s.reshape(s.shape[0], -1).astype(np.float32) for s in states]
+    sim = _pairwise_cosine_matrix(flat)
     return sim, labels, states
 
 
@@ -68,37 +110,32 @@ def collect_weight_norms(orch):
     def fnorm(a):
         return float(np.linalg.norm(np.asarray(a).ravel()))
 
-    win_k = orch.lmap[1][0].kernel   # (kH, kW, C_in, C_out)
-    j1_k  = orch.lmap[1][1].kernel   # (kH, kW, C, C)
-    wback_w = orch.lmap[1][2].W      # (C_out, C) — ChannelWBack inherits W from FullyConnected
-
-    return {"win": fnorm(win_k), "j1": fnorm(j1_k), "wback": fnorm(wback_w)}
+    return {
+        "win":   fnorm(orch.lmap[1][0].kernel),
+        "j1":    fnorm(orch.lmap[1][1].kernel),
+        "wback": fnorm(orch.lmap[1][2].W),
+    }
 
 
 def collect_field_contributions(orch, state_template, x, y, rng, warmup_n):
-    """Measure fractional Win/J/W_back contributions to the J1 field.
-
-    Runs warmup so J1 has a non-trivial state, then evaluates each source
-    module independently at that state.
+    """Fractional Win/J/W_back contributions to the J1 field after warmup.
 
     Returns
     -------
     dict with:
-      "win", "j1", "wback" : float in [0, 1] — fractional contribution to mean |h|
+      "win", "j1", "wback"           : float in [0, 1] — fractional |h| contribution
       "win_abs", "j1_abs", "wback_abs" : float — mean absolute field magnitudes
     """
     state = state_template.init(x, y)
     for _ in range(warmup_n):
         state, rng = orch.step(state, rng=rng, filter_messages="forward")
 
-    h_win   = np.asarray(orch.lmap[1][0](state[0]))   # (B, H, W, C)
-    h_j     = np.asarray(orch.lmap[1][1](state[1]))   # (B, H, W, C)
-    h_wback = np.asarray(orch.lmap[1][2](state[2]))   # (B, H, W, C)
+    h_win   = np.asarray(orch.lmap[1][0](state[0]))
+    h_j     = np.asarray(orch.lmap[1][1](state[1]))
+    h_wback = np.asarray(orch.lmap[1][2](state[2]))
 
-    m_win   = float(np.abs(h_win).mean())
-    m_j     = float(np.abs(h_j).mean())
-    m_wback = float(np.abs(h_wback).mean())
-    total   = m_win + m_j + m_wback + 1e-12
+    m_win, m_j, m_wback = map(lambda h: float(np.abs(h).mean()), (h_win, h_j, h_wback))
+    total = m_win + m_j + m_wback + 1e-12
 
     return {
         "win":       m_win / total,
@@ -111,60 +148,42 @@ def collect_field_contributions(orch, state_template, x, y, rng, warmup_n):
 
 
 def collect_abcd_states(orch, state_template, x, y, rng, warmup_n, clamped_n, free_n):
-    """Collect ABCD attractor states and per-image C-D cosine similarity.
+    """All 6 pairwise cosine similarities between ABCD attractor states.
 
-    A = after warmup (no label feedback yet)
-    B = after clamped (label-informed)
-    C = free from B  (correct attractor path)
-    D = free from A  (autonomous path, no clamping)
+    A = after warmup, B = after clamped, C = free(B), D = free(A).
 
-    C-D similarity: did the network converge to the same fixed point autonomously?
-    High C-D → class attractors exist independently of label feedback.
+    Returns
+    -------
+    dict with "{xy}_sim_mean" and "{xy}_sim_std" for xy in {ab,ac,ad,bc,bd,cd}.
+    """
+    j1_a, j1_b, j1_c, j1_d = _run_abcd(orch, state_template, x, y, rng,
+                                         warmup_n, clamped_n, free_n)
+    j1 = {"a": j1_a, "b": j1_b, "c": j1_c, "d": j1_d}
+    result = {}
+    for p, q in [("a","b"),("a","c"),("a","d"),("b","c"),("b","d"),("c","d")]:
+        sims = _cosine_per_image(j1[p], j1[q])
+        result[f"{p}{q}_sim_mean"] = float(sims.mean())
+        result[f"{p}{q}_sim_std"]  = float(sims.std())
+    return result
+
+
+def collect_abcd_8x8(orch_before, orch_after, state_template, x, y, rng,
+                     warmup_n, clamped_n, free_n):
+    """8×8 pairwise cosine similarity matrix: ABCD (before update) × A'B'C'D' (after).
+
+    The cross-block (rows A-D vs cols A'-D') shows how much the network's fixed
+    points shift after one training step on this batch.
 
     Returns
     -------
     dict with:
-      "cd_sim_mean", "cd_sim_std" : float — mean/std of per-image cosine sim(C, D)
-      "bc_sim_mean", "bc_sim_std" : float — mean/std of per-image cosine sim(B, C)
+      "matrix" : list[list[float]], shape 8×8
+      "labels" : ["A","B","C","D","A'","B'","C'","D'"]
     """
-    state_0 = state_template.init(x, y)
-
-    # A: after warmup
-    state_a, rng_a = state_0, rng
-    for _ in range(warmup_n):
-        state_a, rng_a = orch.step(state_a, rng=rng_a, filter_messages="forward")
-
-    # B: clamped from A
-    state_b, rng_b = state_a, rng_a
-    for _ in range(clamped_n):
-        state_b, rng_b = orch.step(state_b, rng=rng_b, filter_messages="all")
-
-    # C: free from B
-    state_c, rng_c = state_b, rng_b
-    for _ in range(free_n):
-        state_c, rng_c = orch.step(state_c, rng=rng_c, filter_messages="forward")
-
-    # D: free from A (skip clamping) — reuse rng_a for a fair comparison
-    state_d, rng_d = state_a, rng_a
-    for _ in range(free_n):
-        state_d, rng_d = orch.step(state_d, rng=rng_d, filter_messages="forward")
-
-    B = x.shape[0]
-    j1_c = np.asarray(state_c[1]).reshape(B, -1).astype(np.float32)
-    j1_d = np.asarray(state_d[1]).reshape(B, -1).astype(np.float32)
-    j1_b = np.asarray(state_b[1]).reshape(B, -1).astype(np.float32)
-
-    def cosine_per_image(a, b):
-        na = np.linalg.norm(a, axis=1) + 1e-8
-        nb = np.linalg.norm(b, axis=1) + 1e-8
-        return (a * b).sum(axis=1) / (na * nb)
-
-    cd = cosine_per_image(j1_c, j1_d)
-    bc = cosine_per_image(j1_b, j1_c)
-
+    j1_before = _run_abcd(orch_before, state_template, x, y, rng, warmup_n, clamped_n, free_n)
+    j1_after  = _run_abcd(orch_after,  state_template, x, y, rng, warmup_n, clamped_n, free_n)
+    mat = _pairwise_cosine_matrix(list(j1_before) + list(j1_after))
     return {
-        "cd_sim_mean": float(cd.mean()),
-        "cd_sim_std":  float(cd.std()),
-        "bc_sim_mean": float(bc.mean()),
-        "bc_sim_std":  float(bc.std()),
+        "matrix": mat.tolist(),
+        "labels": ["A", "B", "C", "D", "A'", "B'", "C'", "D'"],
     }

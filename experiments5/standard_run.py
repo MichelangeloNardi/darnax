@@ -49,6 +49,7 @@ from diagnostics import (
     collect_weight_norms,
     collect_field_contributions,
     collect_abcd_states,
+    collect_abcd_8x8,
 )
 
 SEEDS        = [0, 42, 123, 7, 999]
@@ -247,6 +248,15 @@ def run_one_seed(seed, cfg, ds, seed_idx, n_seeds, t_script_start, epoch_times_a
             trainer.orchestrator, trainer.state, diag_x, diag_y, diag_rng,
             warmup_n, clamped_n, free_n,
         )
+        # orch_after: apply one training step on the diag batch (pure, does not
+        # advance the trainer) to get A'B'C'D' states for the 8×8 overlap matrix
+        _, orch_after, _, _ = eqx.filter_jit(DynamicalTrainer._train_step_impl)(
+            diag_x, diag_y, diag_rng, trainer.orchestrator, trainer.state, trainer.ctx
+        )
+        abcd_8x8 = collect_abcd_8x8(
+            trainer.orchestrator, orch_after, trainer.state,
+            diag_x, diag_y, diag_rng, warmup_n, clamped_n, free_n,
+        )
         sim, labels, _ = collect_autocorr_matrix(
             trainer.orchestrator, trainer.state, diag_x, diag_y, diag_rng,
             warmup_n, clamped_n, free_n,
@@ -258,6 +268,7 @@ def run_one_seed(seed, cfg, ds, seed_idx, n_seeds, t_script_start, epoch_times_a
             "weight_norms":       wn,
             "field_fractions":    ff,
             "abcd":               abcd,
+            "abcd_8x8":           abcd_8x8,
             "autocorr_matrix":    sim.tolist(),
             "autocorr_labels":    labels,
         })

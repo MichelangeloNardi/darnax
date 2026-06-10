@@ -73,25 +73,7 @@ fig.tight_layout()
 fig.savefig(FIGURES / "comparison_probe.png", dpi=150); plt.close(fig)
 print("saved comparison_probe.png")
 
-# ── 3. standard_gap.png ──────────────────────────────────────────────────────
-hm = np.array(std["head_mean"]);  hs = np.array(std["head_std"])
-pm = np.array(std["probe_mean"]); ps = np.array(std["probe_std"])
-gap_mean = (pm - hm).mean()
-
-fig, ax = plt.subplots(figsize=(7, 4.5))
-ax.plot(epochs, hm, color="#2563EB", label="Head (Wout)", linewidth=2)
-ax.fill_between(epochs, hm - hs, hm + hs, alpha=0.15, color="#2563EB")
-ax.plot(epochs, pm, color="#EA580C", label="Linear probe", linewidth=2)
-ax.fill_between(epochs, pm - ps, pm + ps, alpha=0.15, color="#EA580C")
-ax.fill_between(epochs, hm, pm, alpha=0.1, color="#EA580C", label=f"Gap (mean={gap_mean:.3f})")
-ax.set_xlabel("Epoch"); ax.set_ylabel("Test accuracy")
-ax.set_title(f"Standard run — head vs probe gap ({len(std['seeds'])} seeds ± 1 std)")
-ax.legend(fontsize=9); ax.grid(True, alpha=0.3)
-fig.tight_layout()
-fig.savefig(FIGURES / "standard_gap.png", dpi=150); plt.close(fig)
-print("saved standard_gap.png")
-
-# ── 4. summary_bar.png ───────────────────────────────────────────────────────
+# ── 3. summary_bar.png ───────────────────────────────────────────────────────
 labels_short = ["Standard", "Offline\nWout\n(perceptron)", "Random\nbaseline", "J-only\n(Win primes\nonce)"]
 head_means = [
     np.array(std["head_mean"])[-1],

@@ -106,33 +106,18 @@ print("saved diag_weight_norms.png")
 
 # ── 3. field contribution fractions (mean over seeds) ─────────────────────────
 
-win_frac  = get_per_epoch_mean("field_fractions.win")
-j1_frac   = get_per_epoch_mean("field_fractions.j1")
-wb_frac   = get_per_epoch_mean("field_fractions.wback")
-win_abs   = get_per_epoch_mean("field_fractions.win_abs")
-j1_abs    = get_per_epoch_mean("field_fractions.j1_abs")
-wb_abs    = get_per_epoch_mean("field_fractions.wback_abs")
+win_frac = get_per_epoch_mean("field_fractions.win")
+j1_frac  = get_per_epoch_mean("field_fractions.j1")
+wb_frac  = get_per_epoch_mean("field_fractions.wback")
 
-fig, axes = plt.subplots(1, 2, figsize=(12, 4.5))
-
-ax = axes[0]
+fig, ax = plt.subplots(figsize=(7, 4.5))
 ax.stackplot(epochs, win_frac, j1_frac, wb_frac,
              labels=["Win", "J1", "WBack"],
              colors=["#16A34A", "#2563EB", "#DC2626"], alpha=0.8)
 ax.set_xlabel("Epoch"); ax.set_ylabel("Fractional |h| contribution")
-ax.set_title(f"Field contributions (mean of {n_seeds} seeds)")
+ax.set_title(f"J1 field contributions (mean of {n_seeds} seeds)")
 ax.legend(loc="upper right"); ax.grid(alpha=0.3)
 ax.xaxis.set_major_locator(mticker.MaxNLocator(integer=True))
-
-ax = axes[1]
-ax.plot(epochs, win_abs, color="#16A34A", linewidth=2, label="Win  mean|h^Win|")
-ax.plot(epochs, j1_abs,  color="#2563EB", linewidth=2, label="J1   mean|h^J|")
-ax.plot(epochs, wb_abs,  color="#DC2626", linewidth=2, label="WBack mean|h^B|", linestyle="--")
-ax.set_xlabel("Epoch"); ax.set_ylabel("Mean |field|")
-ax.set_title(f"Absolute field magnitudes (mean of {n_seeds} seeds)")
-ax.legend(); ax.grid(alpha=0.3)
-ax.xaxis.set_major_locator(mticker.MaxNLocator(integer=True))
-
 fig.tight_layout()
 fig.savefig(FIGURES / "diag_field_contributions.png", dpi=150)
 plt.close(fig)

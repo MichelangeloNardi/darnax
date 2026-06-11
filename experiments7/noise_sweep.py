@@ -57,7 +57,7 @@ from diagnostics import (
 
 # ── sweep parameters ──────────────────────────────────────────────────────────
 NOISE_VALUES   = [0.0, 0.1, 0.3, 0.5, 1.0]
-SEEDS          = [0, 42, 123]
+SEEDS          = [0]
 EPOCHS         = 10
 OFFLINE_EPOCHS = 10
 

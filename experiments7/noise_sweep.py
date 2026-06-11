@@ -57,7 +57,7 @@ from diagnostics import (
 
 # ── sweep parameters ──────────────────────────────────────────────────────────
 NOISE_VALUES   = [0.0, 0.1, 0.3, 0.5, 1.0]
-SEEDS          = [0]
+SEEDS          = [42, 123]
 EPOCHS         = 10
 OFFLINE_EPOCHS = 10
 
@@ -563,8 +563,8 @@ def main():
             "offline_head_mean": r["offline_head_mean"], "offline_head_std": r["offline_head_std"],
         } for r in all_results],
     }
-    (results_dir / "sweep.json").write_text(json.dumps(sweep_out, indent=2))
-    print(f"Saved {results_dir / 'sweep.json'}", flush=True)
+    (results_dir / "sweep_extra.json").write_text(json.dumps(sweep_out, indent=2))
+    print(f"Saved {results_dir / 'sweep_extra.json'}", flush=True)
 
     diag_out = {
         "noise_values": NOISE_VALUES, "seeds": SEEDS, "epochs": EPOCHS,
@@ -574,8 +574,8 @@ def main():
                                     for s in r["per_seed"]]}
                       for r in all_results],
     }
-    (results_dir / "diagnostics.json").write_text(json.dumps(diag_out, indent=2))
-    print(f"Saved {results_dir / 'diagnostics.json'}", flush=True)
+    (results_dir / "diagnostics_extra.json").write_text(json.dumps(diag_out, indent=2))
+    print(f"Saved {results_dir / 'diagnostics_extra.json'}", flush=True)
 
     print("\nGenerating figures...", flush=True)
     plot_results(all_results, figures_dir)

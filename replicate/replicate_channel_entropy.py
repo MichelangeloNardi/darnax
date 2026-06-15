@@ -18,7 +18,7 @@ Usage:
 from __future__ import annotations
 
 import jax
-jax.config.update("jax_default_matmul_precision", "highest")
+jax.config.update("jax_default_matmul_precision", "high")
 
 import json
 import sys

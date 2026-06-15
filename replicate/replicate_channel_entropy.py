@@ -17,6 +17,9 @@ Usage:
 
 from __future__ import annotations
 
+import jax
+jax.config.update("jax_default_matmul_precision", "highest")
+
 import json
 import sys
 from pathlib import Path
@@ -36,7 +39,7 @@ from torch.utils.data import DataLoader, TensorDataset
 
 HERE       = Path(__file__).resolve().parent        # replicate/
 DARNAX_SRC = HERE.parent / "src"                   # src/
-CFG_PATH   = HERE / "best_channel_entropy_cfg.json"
+CFG_PATH   = HERE / "matei_W_out_cfg.json"
 
 sys.path.insert(0, str(DARNAX_SRC))
 

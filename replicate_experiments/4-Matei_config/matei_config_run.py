@@ -56,7 +56,7 @@ from diagnostics import (
 )
 
 SEEDS        = [0, 42, 123]
-EPOCHS       = 10
+EPOCHS       = 20
 C, KSIZE     = 16, 5
 H, W, POOL   = 32, 32, 8
 PROBE_EPOCHS = 20

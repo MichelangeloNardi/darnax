@@ -1,0 +1,176 @@
+Config: {'lr_j': 0.001, 'lr_win': 0.0226, 'lr_wout': 0.0432, 'kernel_decay_rate': 0.0008, 'threshold_j': 1.9796, 'threshold_win': 0.8511, 'j_d': 0.8954, 'entropy_beta': 0.3449, 'momentum': 0.3162, 'clamped_n_iter': 5, 'free_n_iter': 6, 'strength_back': 1.4712}
+Noise values: [0.0, 0.1, 0.3, 0.5, 1.0]  (strength_back=1.471)
+Seeds: [0]   Epochs: 10   Offline epochs: 10
+
+============================================================
+NOISE_STD = 0.00  (1 seeds × 10 epochs)
+============================================================
+
+  --- noise=0.00  seed=0 ---
+  noise=0.00  seed=0  ep= 1/10  head=0.3035  probe=0.4532  cd=0.934  [0m20s/ep  elapsed=0m21s]
+  noise=0.00  seed=0  ep= 2/10  head=0.2810  probe=0.4590  cd=0.931  [0m12s/ep  elapsed=0m33s]
+  noise=0.00  seed=0  ep= 3/10  head=0.2559  probe=0.4576  cd=0.929  [0m12s/ep  elapsed=0m46s]
+  noise=0.00  seed=0  ep= 4/10  head=0.2977  probe=0.4525  cd=0.929  [0m12s/ep  elapsed=0m59s]
+  noise=0.00  seed=0  ep= 5/10  head=0.2828  probe=0.4605  cd=0.934  [0m12s/ep  elapsed=1m11s]
+  noise=0.00  seed=0  ep= 6/10  head=0.2828  probe=0.4629  cd=0.927  [0m12s/ep  elapsed=1m24s]
+  noise=0.00  seed=0  ep= 7/10  head=0.2865  probe=0.4580  cd=0.927  [0m13s/ep  elapsed=1m37s]
+  noise=0.00  seed=0  ep= 8/10  head=0.2774  probe=0.4631  cd=0.925  [0m12s/ep  elapsed=1m50s]
+  noise=0.00  seed=0  ep= 9/10  head=0.2688  probe=0.4615  cd=0.917  [0m12s/ep  elapsed=2m02s]
+  noise=0.00  seed=0  ep=10/10  head=0.2578  probe=0.4562  cd=0.917  [0m12s/ep  elapsed=2m15s]
+  [offline Wout] 10 ep...
+    offline ep  1  head=0.2640
+    offline ep  2  head=0.2593
+    offline ep  3  head=0.2579
+    offline ep  4  head=0.2579
+    offline ep  5  head=0.2555
+    offline ep  6  head=0.2522
+    offline ep  7  head=0.2516
+    offline ep  8  head=0.2489
+    offline ep  9  head=0.2493
+    offline ep 10  head=0.2465
+  [offline done]  head=0.2465  total seed: 2m47s
+
+  noise=0.00  head=0.2578±0.0000  probe=0.4562±0.0000  offline=0.2465±0.0000
+
+============================================================
+NOISE_STD = 0.10  (1 seeds × 10 epochs)
+============================================================
+
+  --- noise=0.10  seed=0 ---
+  noise=0.10  seed=0  ep= 1/10  head=0.3031  probe=0.4506  cd=0.928  [0m18s/ep  elapsed=3m08s]
+  noise=0.10  seed=0  ep= 2/10  head=0.2863  probe=0.4530  cd=0.929  [0m12s/ep  elapsed=3m20s]
+  noise=0.10  seed=0  ep= 3/10  head=0.2477  probe=0.4551  cd=0.928  [0m12s/ep  elapsed=3m33s]
+  noise=0.10  seed=0  ep= 4/10  head=0.2833  probe=0.4576  cd=0.930  [0m12s/ep  elapsed=3m46s]
+  noise=0.10  seed=0  ep= 5/10  head=0.2690  probe=0.4555  cd=0.928  [0m12s/ep  elapsed=3m58s]
+  noise=0.10  seed=0  ep= 6/10  head=0.2748  probe=0.4558  cd=0.927  [0m12s/ep  elapsed=4m11s]
+  noise=0.10  seed=0  ep= 7/10  head=0.2716  probe=0.4567  cd=0.921  [0m12s/ep  elapsed=4m23s]
+  noise=0.10  seed=0  ep= 8/10  head=0.2636  probe=0.4619  cd=0.920  [0m12s/ep  elapsed=4m36s]
+  noise=0.10  seed=0  ep= 9/10  head=0.2539  probe=0.4568  cd=0.925  [0m13s/ep  elapsed=4m50s]
+  noise=0.10  seed=0  ep=10/10  head=0.2553  probe=0.4643  cd=0.915  [0m12s/ep  elapsed=5m02s]
+  [offline Wout] 10 ep...
+    offline ep  1  head=0.2757
+    offline ep  2  head=0.2765
+    offline ep  3  head=0.2760
+    offline ep  4  head=0.2749
+    offline ep  5  head=0.2750
+    offline ep  6  head=0.2759
+    offline ep  7  head=0.2711
+    offline ep  8  head=0.2722
+    offline ep  9  head=0.2713
+    offline ep 10  head=0.2710
+  [offline done]  head=0.2710  total seed: 2m50s
+
+  noise=0.10  head=0.2553±0.0000  probe=0.4643±0.0000  offline=0.2710±0.0000
+
+============================================================
+NOISE_STD = 0.30  (1 seeds × 10 epochs)
+============================================================
+
+  --- noise=0.30  seed=0 ---
+  noise=0.30  seed=0  ep= 1/10  head=0.2589  probe=0.4493  cd=0.908  [0m19s/ep  elapsed=5m58s]
+  noise=0.30  seed=0  ep= 2/10  head=0.2608  probe=0.4466  cd=0.915  [0m12s/ep  elapsed=6m11s]
+  noise=0.30  seed=0  ep= 3/10  head=0.2753  probe=0.4585  cd=0.917  [0m12s/ep  elapsed=6m23s]
+  noise=0.30  seed=0  ep= 4/10  head=0.2522  probe=0.4655  cd=0.917  [0m12s/ep  elapsed=6m36s]
+  noise=0.30  seed=0  ep= 5/10  head=0.2465  probe=0.4672  cd=0.914  [0m12s/ep  elapsed=6m48s]
+  noise=0.30  seed=0  ep= 6/10  head=0.2948  probe=0.4637  cd=0.907  [0m12s/ep  elapsed=7m01s]
+  noise=0.30  seed=0  ep= 7/10  head=0.2737  probe=0.4597  cd=0.912  [0m12s/ep  elapsed=7m14s]
+  noise=0.30  seed=0  ep= 8/10  head=0.2342  probe=0.4684  cd=0.904  [0m13s/ep  elapsed=7m27s]
+  noise=0.30  seed=0  ep= 9/10  head=0.2743  probe=0.4684  cd=0.895  [0m12s/ep  elapsed=7m40s]
+  noise=0.30  seed=0  ep=10/10  head=0.2495  probe=0.4738  cd=0.904  [0m12s/ep  elapsed=7m53s]
+  [offline Wout] 10 ep...
+    offline ep  1  head=0.2711
+    offline ep  2  head=0.2684
+    offline ep  3  head=0.2701
+    offline ep  4  head=0.2716
+    offline ep  5  head=0.2679
+    offline ep  6  head=0.2664
+    offline ep  7  head=0.2689
+    offline ep  8  head=0.2624
+    offline ep  9  head=0.2576
+    offline ep 10  head=0.2608
+  [offline done]  head=0.2608  total seed: 2m51s
+
+  noise=0.30  head=0.2495±0.0000  probe=0.4738±0.0000  offline=0.2608±0.0000
+
+============================================================
+NOISE_STD = 0.50  (1 seeds × 10 epochs)
+============================================================
+
+  --- noise=0.50  seed=0 ---
+  noise=0.50  seed=0  ep= 1/10  head=0.2180  probe=0.4522  cd=0.894  [0m19s/ep  elapsed=8m49s]
+  noise=0.50  seed=0  ep= 2/10  head=0.2300  probe=0.4588  cd=0.897  [0m13s/ep  elapsed=9m02s]
+  noise=0.50  seed=0  ep= 3/10  head=0.2105  probe=0.4552  cd=0.906  [0m12s/ep  elapsed=9m15s]
+  noise=0.50  seed=0  ep= 4/10  head=0.1981  probe=0.4606  cd=0.892  [0m13s/ep  elapsed=9m29s]
+  noise=0.50  seed=0  ep= 5/10  head=0.1955  probe=0.4594  cd=0.890  [0m12s/ep  elapsed=9m42s]
+  noise=0.50  seed=0  ep= 6/10  head=0.2495  probe=0.4642  cd=0.882  [0m12s/ep  elapsed=9m54s]
+  noise=0.50  seed=0  ep= 7/10  head=0.2348  probe=0.4689  cd=0.895  [0m12s/ep  elapsed=10m07s]
+  noise=0.50  seed=0  ep= 8/10  head=0.2438  probe=0.4670  cd=0.887  [0m12s/ep  elapsed=10m20s]
+  noise=0.50  seed=0  ep= 9/10  head=0.2437  probe=0.4644  cd=0.893  [0m13s/ep  elapsed=10m33s]
+  noise=0.50  seed=0  ep=10/10  head=0.2297  probe=0.4689  cd=0.889  [0m12s/ep  elapsed=10m46s]
+  [offline Wout] 10 ep...
+    offline ep  1  head=0.2516
+    offline ep  2  head=0.2521
+    offline ep  3  head=0.2474
+    offline ep  4  head=0.2475
+    offline ep  5  head=0.2460
+    offline ep  6  head=0.2405
+    offline ep  7  head=0.2394
+    offline ep  8  head=0.2370
+    offline ep  9  head=0.2399
+    offline ep 10  head=0.2343
+  [offline done]  head=0.2343  total seed: 2m51s
+
+  noise=0.50  head=0.2297±0.0000  probe=0.4689±0.0000  offline=0.2343±0.0000
+
+============================================================
+NOISE_STD = 1.00  (1 seeds × 10 epochs)
+============================================================
+
+  --- noise=1.00  seed=0 ---
+  noise=1.00  seed=0  ep= 1/10  head=0.2078  probe=0.4409  cd=0.865  [0m19s/ep  elapsed=11m41s]
+  noise=1.00  seed=0  ep= 2/10  head=0.2498  probe=0.4548  cd=0.877  [0m12s/ep  elapsed=11m54s]
+  noise=1.00  seed=0  ep= 3/10  head=0.1982  probe=0.4533  cd=0.883  [0m12s/ep  elapsed=12m07s]
+  noise=1.00  seed=0  ep= 4/10  head=0.2276  probe=0.4516  cd=0.894  [0m12s/ep  elapsed=12m19s]
+  noise=1.00  seed=0  ep= 5/10  head=0.2371  probe=0.4535  cd=0.881  [0m13s/ep  elapsed=12m32s]
+  noise=1.00  seed=0  ep= 6/10  head=0.2146  probe=0.4593  cd=0.876  [0m12s/ep  elapsed=12m45s]
+  noise=1.00  seed=0  ep= 7/10  head=0.2265  probe=0.4617  cd=0.884  [0m13s/ep  elapsed=12m58s]
+  noise=1.00  seed=0  ep= 8/10  head=0.2484  probe=0.4497  cd=0.882  [0m12s/ep  elapsed=13m11s]
+  noise=1.00  seed=0  ep= 9/10  head=0.2613  probe=0.4578  cd=0.888  [0m13s/ep  elapsed=13m24s]
+  noise=1.00  seed=0  ep=10/10  head=0.2414  probe=0.4610  cd=0.885  [0m13s/ep  elapsed=13m37s]
+  [offline Wout] 10 ep...
+    offline ep  1  head=0.2448
+    offline ep  2  head=0.2356
+    offline ep  3  head=0.2375
+    offline ep  4  head=0.2301
+    offline ep  5  head=0.2312
+    offline ep  6  head=0.2308
+    offline ep  7  head=0.2283
+    offline ep  8  head=0.2237
+    offline ep  9  head=0.2256
+    offline ep 10  head=0.2251
+  [offline done]  head=0.2251  total seed: 2m51s
+
+  noise=1.00  head=0.2414±0.0000  probe=0.4610±0.0000  offline=0.2251±0.0000
+
+Total runtime: 14m14s
+
+  Noise   Head(final)   Probe(final)     Offline
+----------------------------------------------------
+   0.00  0.2578±0.0000  0.4562±0.0000  0.2465±0.0000
+   0.10  0.2553±0.0000  0.4643±0.0000  0.2710±0.0000
+   0.30  0.2495±0.0000  0.4738±0.0000  0.2608±0.0000
+   0.50  0.2297±0.0000  0.4689±0.0000  0.2343±0.0000
+   1.00  0.2414±0.0000  0.4610±0.0000  0.2251±0.0000
+Saved /home/nardi/projects/darnax/experiments7/results/sweep.json
+Saved /home/nardi/projects/darnax/experiments7/results/diagnostics.json
+
+Generating figures...
+saved accuracy.png
+saved accuracy_curves.png
+saved weight_norms.png
+saved field_fractions.png
+saved abcd.png
+saved autocorr.png
+saved cd_similarity.png
+
+All done. Total: 14m14s

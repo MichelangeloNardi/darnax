@@ -1,0 +1,417 @@
+Config: {'lr_j': 0.001, 'lr_win': 0.0226, 'lr_wout': 0.0432, 'kernel_decay_rate': 0.0008, 'threshold_j': 1.9796, 'threshold_win': 0.8511, 'j_d': 0.8954, 'entropy_beta': 0.3449, 'momentum': 0.3162, 'clamped_n_iter': 5, 'free_n_iter': 6, 'strength_back': 1.4712}
+
+Lambda values: [0.0, 0.5, 0.7, 0.9, 1.0]
+Seeds: [0, 42, 123]   Epochs: 10   Offline epochs: 10
+
+============================================================
+LAMBDA = 0.00  (3 seeds × 10 epochs)
+============================================================
+
+  --- λ=0.00  seed=0 ---
+  λ=0.00  seed=0  ep= 1/10  head=0.2918  probe=0.4255  cd=0.952  [0m21s/ep  elapsed=0m22s]
+  λ=0.00  seed=0  ep= 2/10  head=0.3309  probe=0.4350  cd=0.950  [0m12s/ep  elapsed=0m35s]
+  λ=0.00  seed=0  ep= 3/10  head=0.3269  probe=0.4437  cd=0.941  [0m12s/ep  elapsed=0m48s]
+  λ=0.00  seed=0  ep= 4/10  head=0.3290  probe=0.4477  cd=0.932  [0m12s/ep  elapsed=1m00s]
+  λ=0.00  seed=0  ep= 5/10  head=0.3362  probe=0.4459  cd=0.922  [0m12s/ep  elapsed=1m13s]
+  λ=0.00  seed=0  ep= 6/10  head=0.3213  probe=0.4541  cd=0.906  [0m12s/ep  elapsed=1m26s]
+  λ=0.00  seed=0  ep= 7/10  head=0.2874  probe=0.4522  cd=0.903  [0m12s/ep  elapsed=1m39s]
+  λ=0.00  seed=0  ep= 8/10  head=0.2882  probe=0.4505  cd=0.892  [0m12s/ep  elapsed=1m52s]
+  λ=0.00  seed=0  ep= 9/10  head=0.2032  probe=0.4427  cd=0.891  [0m12s/ep  elapsed=2m04s]
+  λ=0.00  seed=0  ep=10/10  head=0.2337  probe=0.4551  cd=0.888  [0m12s/ep  elapsed=2m17s]
+  [offline Wout] training 10 ep (Win+J1 frozen)...
+    offline ep  1/10  head=0.3673
+    offline ep  2/10  head=0.3641
+    offline ep  3/10  head=0.3620
+    offline ep  4/10  head=0.3547
+    offline ep  5/10  head=0.3410
+    offline ep  6/10  head=0.3426
+    offline ep  7/10  head=0.3414
+    offline ep  8/10  head=0.3396
+    offline ep  9/10  head=0.3378
+    offline ep 10/10  head=0.3308
+  [offline done]  head=0.3308  total seed: 2m51s
+
+  --- λ=0.00  seed=42 ---
+  λ=0.00  seed=42  ep= 1/10  head=0.3154  probe=0.4272  cd=0.946  [0m17s/ep  elapsed=3m10s]
+  λ=0.00  seed=42  ep= 2/10  head=0.3160  probe=0.4406  cd=0.945  [0m12s/ep  elapsed=3m22s]
+  λ=0.00  seed=42  ep= 3/10  head=0.3121  probe=0.4475  cd=0.920  [0m12s/ep  elapsed=3m35s]
+  λ=0.00  seed=42  ep= 4/10  head=0.3045  probe=0.4505  cd=0.905  [0m12s/ep  elapsed=3m48s]
+  λ=0.00  seed=42  ep= 5/10  head=0.2726  probe=0.4471  cd=0.900  [0m12s/ep  elapsed=4m01s]
+  λ=0.00  seed=42  ep= 6/10  head=0.2783  probe=0.4408  cd=0.897  [0m13s/ep  elapsed=4m14s]
+  λ=0.00  seed=42  ep= 7/10  head=0.3008  probe=0.4426  cd=0.887  [0m12s/ep  elapsed=4m27s]
+  λ=0.00  seed=42  ep= 8/10  head=0.3008  probe=0.4445  cd=0.885  [0m13s/ep  elapsed=4m40s]
+  λ=0.00  seed=42  ep= 9/10  head=0.3072  probe=0.4457  cd=0.881  [0m12s/ep  elapsed=4m53s]
+  λ=0.00  seed=42  ep=10/10  head=0.3252  probe=0.4460  cd=0.882  [0m13s/ep  elapsed=5m06s]
+  [offline Wout] training 10 ep (Win+J1 frozen)...
+    offline ep  1/10  head=0.3632
+    offline ep  2/10  head=0.3538
+    offline ep  3/10  head=0.3392
+    offline ep  4/10  head=0.3281
+    offline ep  5/10  head=0.3232
+    offline ep  6/10  head=0.3203
+    offline ep  7/10  head=0.3115
+    offline ep  8/10  head=0.3147
+    offline ep  9/10  head=0.3090
+    offline ep 10/10  head=0.3074
+  [offline done]  head=0.3074  total seed: 2m49s
+
+  --- λ=0.00  seed=123 ---
+  λ=0.00  seed=123  ep= 1/10  head=0.2979  probe=0.4414  cd=0.944  [0m18s/ep  elapsed=6m00s]
+  λ=0.00  seed=123  ep= 2/10  head=0.3004  probe=0.4380  cd=0.925  [0m12s/ep  elapsed=6m13s]
+  λ=0.00  seed=123  ep= 3/10  head=0.3176  probe=0.4362  cd=0.921  [0m12s/ep  elapsed=6m25s]
+  λ=0.00  seed=123  ep= 4/10  head=0.3083  probe=0.4526  cd=0.913  [0m12s/ep  elapsed=6m38s]
+  λ=0.00  seed=123  ep= 5/10  head=0.2726  probe=0.4505  cd=0.905  [0m12s/ep  elapsed=6m50s]
+  λ=0.00  seed=123  ep= 6/10  head=0.3242  probe=0.4413  cd=0.907  [0m12s/ep  elapsed=7m03s]
+  λ=0.00  seed=123  ep= 7/10  head=0.3084  probe=0.4527  cd=0.892  [0m12s/ep  elapsed=7m15s]
+  λ=0.00  seed=123  ep= 8/10  head=0.3004  probe=0.4402  cd=0.883  [0m12s/ep  elapsed=7m28s]
+  λ=0.00  seed=123  ep= 9/10  head=0.3017  probe=0.4367  cd=0.887  [0m12s/ep  elapsed=7m41s]
+  λ=0.00  seed=123  ep=10/10  head=0.2620  probe=0.4472  cd=0.880  [0m13s/ep  elapsed=7m54s]
+  [offline Wout] training 10 ep (Win+J1 frozen)...
+    offline ep  1/10  head=0.3358
+    offline ep  2/10  head=0.3356
+    offline ep  3/10  head=0.3277
+    offline ep  4/10  head=0.3258
+    offline ep  5/10  head=0.3210
+    offline ep  6/10  head=0.3164
+    offline ep  7/10  head=0.3102
+    offline ep  8/10  head=0.3053
+    offline ep  9/10  head=0.3074
+    offline ep 10/10  head=0.3037
+  [offline done]  head=0.3037  total seed: 2m48s
+
+  λ=0.00  head(final)=0.2736±0.0382  probe(final)=0.4494±0.0040  offline=0.3140±0.0120
+
+============================================================
+LAMBDA = 0.50  (3 seeds × 10 epochs)
+============================================================
+
+  --- λ=0.50  seed=0 ---
+  λ=0.50  seed=0  ep= 1/10  head=0.3101  probe=0.4395  cd=0.944  [0m17s/ep  elapsed=8m48s]
+  λ=0.50  seed=0  ep= 2/10  head=0.3125  probe=0.4467  cd=0.925  [0m12s/ep  elapsed=9m00s]
+  λ=0.50  seed=0  ep= 3/10  head=0.2797  probe=0.4373  cd=0.922  [0m12s/ep  elapsed=9m13s]
+  λ=0.50  seed=0  ep= 4/10  head=0.2875  probe=0.4407  cd=0.912  [0m12s/ep  elapsed=9m25s]
+  λ=0.50  seed=0  ep= 5/10  head=0.2863  probe=0.4511  cd=0.907  [0m12s/ep  elapsed=9m38s]
+  λ=0.50  seed=0  ep= 6/10  head=0.2716  probe=0.4456  cd=0.901  [0m12s/ep  elapsed=9m51s]
+  λ=0.50  seed=0  ep= 7/10  head=0.2515  probe=0.4478  cd=0.901  [0m12s/ep  elapsed=10m04s]
+  λ=0.50  seed=0  ep= 8/10  head=0.2843  probe=0.4471  cd=0.890  [0m12s/ep  elapsed=10m17s]
+  λ=0.50  seed=0  ep= 9/10  head=0.2520  probe=0.4445  cd=0.892  [0m12s/ep  elapsed=10m30s]
+  λ=0.50  seed=0  ep=10/10  head=0.2731  probe=0.4506  cd=0.896  [0m12s/ep  elapsed=10m42s]
+  [offline Wout] training 10 ep (Win+J1 frozen)...
+    offline ep  1/10  head=0.3345
+    offline ep  2/10  head=0.3210
+    offline ep  3/10  head=0.3126
+    offline ep  4/10  head=0.3018
+    offline ep  5/10  head=0.2949
+    offline ep  6/10  head=0.2940
+    offline ep  7/10  head=0.2905
+    offline ep  8/10  head=0.2859
+    offline ep  9/10  head=0.2851
+    offline ep 10/10  head=0.2823
+  [offline done]  head=0.2823  total seed: 2m47s
+
+  --- λ=0.50  seed=42 ---
+  λ=0.50  seed=42  ep= 1/10  head=0.3653  probe=0.4459  cd=0.938  [0m17s/ep  elapsed=11m35s]
+  λ=0.50  seed=42  ep= 2/10  head=0.2833  probe=0.4570  cd=0.915  [0m12s/ep  elapsed=11m48s]
+  λ=0.50  seed=42  ep= 3/10  head=0.2726  probe=0.4403  cd=0.902  [0m12s/ep  elapsed=12m00s]
+  λ=0.50  seed=42  ep= 4/10  head=0.2436  probe=0.4432  cd=0.890  [0m12s/ep  elapsed=12m13s]
+  λ=0.50  seed=42  ep= 5/10  head=0.2639  probe=0.4428  cd=0.882  [0m13s/ep  elapsed=12m26s]
+  λ=0.50  seed=42  ep= 6/10  head=0.2405  probe=0.4479  cd=0.874  [0m12s/ep  elapsed=12m38s]
+  λ=0.50  seed=42  ep= 7/10  head=0.2830  probe=0.4431  cd=0.869  [0m12s/ep  elapsed=12m51s]
+  λ=0.50  seed=42  ep= 8/10  head=0.2340  probe=0.4487  cd=0.863  [0m12s/ep  elapsed=13m04s]
+  λ=0.50  seed=42  ep= 9/10  head=0.2891  probe=0.4467  cd=0.865  [0m13s/ep  elapsed=13m17s]
+  λ=0.50  seed=42  ep=10/10  head=0.2817  probe=0.4447  cd=0.868  [0m12s/ep  elapsed=13m30s]
+  [offline Wout] training 10 ep (Win+J1 frozen)...
+    offline ep  1/10  head=0.3031
+    offline ep  2/10  head=0.2956
+    offline ep  3/10  head=0.2852
+    offline ep  4/10  head=0.2780
+    offline ep  5/10  head=0.2735
+    offline ep  6/10  head=0.2730
+    offline ep  7/10  head=0.2693
+    offline ep  8/10  head=0.2654
+    offline ep  9/10  head=0.2657
+    offline ep 10/10  head=0.2594
+  [offline done]  head=0.2594  total seed: 2m47s
+
+  --- λ=0.50  seed=123 ---
+  λ=0.50  seed=123  ep= 1/10  head=0.3304  probe=0.4457  cd=0.929  [0m17s/ep  elapsed=14m22s]
+  λ=0.50  seed=123  ep= 2/10  head=0.3031  probe=0.4416  cd=0.925  [0m12s/ep  elapsed=14m35s]
+  λ=0.50  seed=123  ep= 3/10  head=0.2525  probe=0.4527  cd=0.911  [0m13s/ep  elapsed=14m48s]
+  λ=0.50  seed=123  ep= 4/10  head=0.2879  probe=0.4503  cd=0.911  [0m12s/ep  elapsed=15m00s]
+  λ=0.50  seed=123  ep= 5/10  head=0.2501  probe=0.4462  cd=0.894  [0m13s/ep  elapsed=15m14s]
+  λ=0.50  seed=123  ep= 6/10  head=0.2238  probe=0.4487  cd=0.894  [0m14s/ep  elapsed=15m28s]
+  λ=0.50  seed=123  ep= 7/10  head=0.2646  probe=0.4377  cd=0.885  [0m14s/ep  elapsed=15m42s]
+  λ=0.50  seed=123  ep= 8/10  head=0.2360  probe=0.4536  cd=0.875  [0m13s/ep  elapsed=15m56s]
+  λ=0.50  seed=123  ep= 9/10  head=0.2434  probe=0.4405  cd=0.882  [0m13s/ep  elapsed=16m09s]
+  λ=0.50  seed=123  ep=10/10  head=0.2536  probe=0.4557  cd=0.867  [0m12s/ep  elapsed=16m22s]
+  [offline Wout] training 10 ep (Win+J1 frozen)...
+    offline ep  1/10  head=0.3236
+    offline ep  2/10  head=0.3043
+    offline ep  3/10  head=0.2925
+    offline ep  4/10  head=0.2820
+    offline ep  5/10  head=0.2774
+    offline ep  6/10  head=0.2743
+    offline ep  7/10  head=0.2683
+    offline ep  8/10  head=0.2660
+    offline ep  9/10  head=0.2588
+    offline ep 10/10  head=0.2587
+  [offline done]  head=0.2587  total seed: 2m54s
+
+  λ=0.50  head(final)=0.2695±0.0118  probe(final)=0.4503±0.0045  offline=0.2668±0.0110
+
+============================================================
+LAMBDA = 0.70  (3 seeds × 10 epochs)
+============================================================
+
+  --- λ=0.70  seed=0 ---
+  λ=0.70  seed=0  ep= 1/10  head=0.3352  probe=0.4528  cd=0.936  [0m17s/ep  elapsed=17m17s]
+  λ=0.70  seed=0  ep= 2/10  head=0.2759  probe=0.4526  cd=0.914  [0m12s/ep  elapsed=17m29s]
+  λ=0.70  seed=0  ep= 3/10  head=0.2494  probe=0.4522  cd=0.907  [0m12s/ep  elapsed=17m42s]
+  λ=0.70  seed=0  ep= 4/10  head=0.2633  probe=0.4502  cd=0.903  [0m12s/ep  elapsed=17m55s]
+  λ=0.70  seed=0  ep= 5/10  head=0.2298  probe=0.4500  cd=0.890  [0m12s/ep  elapsed=18m08s]
+  λ=0.70  seed=0  ep= 6/10  head=0.2240  probe=0.4535  cd=0.881  [0m13s/ep  elapsed=18m21s]
+  λ=0.70  seed=0  ep= 7/10  head=0.2627  probe=0.4500  cd=0.878  [0m12s/ep  elapsed=18m34s]
+  λ=0.70  seed=0  ep= 8/10  head=0.2459  probe=0.4422  cd=0.869  [0m12s/ep  elapsed=18m47s]
+  λ=0.70  seed=0  ep= 9/10  head=0.2471  probe=0.4392  cd=0.872  [0m14s/ep  elapsed=19m01s]
+  λ=0.70  seed=0  ep=10/10  head=0.2312  probe=0.4448  cd=0.863  [0m13s/ep  elapsed=19m14s]
+  [offline Wout] training 10 ep (Win+J1 frozen)...
+    offline ep  1/10  head=0.2821
+    offline ep  2/10  head=0.2620
+    offline ep  3/10  head=0.2518
+    offline ep  4/10  head=0.2470
+    offline ep  5/10  head=0.2438
+    offline ep  6/10  head=0.2431
+    offline ep  7/10  head=0.2371
+    offline ep  8/10  head=0.2336
+    offline ep  9/10  head=0.2374
+    offline ep 10/10  head=0.2314
+  [offline done]  head=0.2314  total seed: 2m51s
+
+  --- λ=0.70  seed=42 ---
+  λ=0.70  seed=42  ep= 1/10  head=0.3029  probe=0.4397  cd=0.936  [0m18s/ep  elapsed=20m09s]
+  λ=0.70  seed=42  ep= 2/10  head=0.2894  probe=0.4448  cd=0.932  [0m12s/ep  elapsed=20m21s]
+  λ=0.70  seed=42  ep= 3/10  head=0.2970  probe=0.4469  cd=0.923  [0m12s/ep  elapsed=20m34s]
+  λ=0.70  seed=42  ep= 4/10  head=0.2999  probe=0.4441  cd=0.917  [0m12s/ep  elapsed=20m47s]
+  λ=0.70  seed=42  ep= 5/10  head=0.3268  probe=0.4489  cd=0.916  [0m12s/ep  elapsed=21m00s]
+  λ=0.70  seed=42  ep= 6/10  head=0.2764  probe=0.4451  cd=0.889  [0m12s/ep  elapsed=21m12s]
+  λ=0.70  seed=42  ep= 7/10  head=0.2309  probe=0.4528  cd=0.882  [0m13s/ep  elapsed=21m26s]
+  λ=0.70  seed=42  ep= 8/10  head=0.2607  probe=0.4393  cd=0.884  [0m12s/ep  elapsed=21m38s]
+  λ=0.70  seed=42  ep= 9/10  head=0.2730  probe=0.4439  cd=0.887  [0m12s/ep  elapsed=21m51s]
+  λ=0.70  seed=42  ep=10/10  head=0.2576  probe=0.4452  cd=0.876  [0m12s/ep  elapsed=22m04s]
+  [offline Wout] training 10 ep (Win+J1 frozen)...
+    offline ep  1/10  head=0.2948
+    offline ep  2/10  head=0.2808
+    offline ep  3/10  head=0.2705
+    offline ep  4/10  head=0.2667
+    offline ep  5/10  head=0.2607
+    offline ep  6/10  head=0.2581
+    offline ep  7/10  head=0.2587
+    offline ep  8/10  head=0.2523
+    offline ep  9/10  head=0.2511
+    offline ep 10/10  head=0.2481
+  [offline done]  head=0.2481  total seed: 2m49s
+
+  --- λ=0.70  seed=123 ---
+  λ=0.70  seed=123  ep= 1/10  head=0.3298  probe=0.4421  cd=0.947  [0m17s/ep  elapsed=22m58s]
+  λ=0.70  seed=123  ep= 2/10  head=0.2904  probe=0.4473  cd=0.923  [0m12s/ep  elapsed=23m11s]
+  λ=0.70  seed=123  ep= 3/10  head=0.2815  probe=0.4475  cd=0.913  [0m12s/ep  elapsed=23m23s]
+  λ=0.70  seed=123  ep= 4/10  head=0.2846  probe=0.4520  cd=0.904  [0m12s/ep  elapsed=23m36s]
+  λ=0.70  seed=123  ep= 5/10  head=0.2524  probe=0.4496  cd=0.900  [0m12s/ep  elapsed=23m49s]
+  λ=0.70  seed=123  ep= 6/10  head=0.2526  probe=0.4517  cd=0.894  [0m12s/ep  elapsed=24m02s]
+  λ=0.70  seed=123  ep= 7/10  head=0.2891  probe=0.4469  cd=0.892  [0m12s/ep  elapsed=24m14s]
+  λ=0.70  seed=123  ep= 8/10  head=0.2436  probe=0.4453  cd=0.887  [0m12s/ep  elapsed=24m27s]
+  λ=0.70  seed=123  ep= 9/10  head=0.2723  probe=0.4443  cd=0.885  [0m12s/ep  elapsed=24m39s]
+  λ=0.70  seed=123  ep=10/10  head=0.2470  probe=0.4422  cd=0.881  [0m12s/ep  elapsed=24m52s]
+  [offline Wout] training 10 ep (Win+J1 frozen)...
+    offline ep  1/10  head=0.2906
+    offline ep  2/10  head=0.2818
+    offline ep  3/10  head=0.2725
+    offline ep  4/10  head=0.2676
+    offline ep  5/10  head=0.2607
+    offline ep  6/10  head=0.2558
+    offline ep  7/10  head=0.2534
+    offline ep  8/10  head=0.2489
+    offline ep  9/10  head=0.2486
+    offline ep 10/10  head=0.2437
+  [offline done]  head=0.2437  total seed: 2m50s
+
+  λ=0.70  head(final)=0.2453±0.0108  probe(final)=0.4441±0.0013  offline=0.2411±0.0071
+
+============================================================
+LAMBDA = 0.90  (3 seeds × 10 epochs)
+============================================================
+
+  --- λ=0.90  seed=0 ---
+  λ=0.90  seed=0  ep= 1/10  head=0.3395  probe=0.4579  cd=0.939  [0m18s/ep  elapsed=25m49s]
+  λ=0.90  seed=0  ep= 2/10  head=0.2905  probe=0.4581  cd=0.919  [0m12s/ep  elapsed=26m01s]
+  λ=0.90  seed=0  ep= 3/10  head=0.2583  probe=0.4565  cd=0.907  [0m13s/ep  elapsed=26m14s]
+  λ=0.90  seed=0  ep= 4/10  head=0.2849  probe=0.4552  cd=0.896  [0m12s/ep  elapsed=26m27s]
+  λ=0.90  seed=0  ep= 5/10  head=0.2212  probe=0.4524  cd=0.894  [0m12s/ep  elapsed=26m40s]
+  λ=0.90  seed=0  ep= 6/10  head=0.2485  probe=0.4484  cd=0.886  [0m12s/ep  elapsed=26m52s]
+  λ=0.90  seed=0  ep= 7/10  head=0.2503  probe=0.4492  cd=0.881  [0m12s/ep  elapsed=27m05s]
+  λ=0.90  seed=0  ep= 8/10  head=0.2195  probe=0.4500  cd=0.881  [0m12s/ep  elapsed=27m18s]
+  λ=0.90  seed=0  ep= 9/10  head=0.2290  probe=0.4470  cd=0.874  [0m13s/ep  elapsed=27m32s]
+  λ=0.90  seed=0  ep=10/10  head=0.2399  probe=0.4490  cd=0.877  [0m14s/ep  elapsed=27m46s]
+  [offline Wout] training 10 ep (Win+J1 frozen)...
+    offline ep  1/10  head=0.2665
+    offline ep  2/10  head=0.2615
+    offline ep  3/10  head=0.2572
+    offline ep  4/10  head=0.2533
+    offline ep  5/10  head=0.2495
+    offline ep  6/10  head=0.2453
+    offline ep  7/10  head=0.2445
+    offline ep  8/10  head=0.2471
+    offline ep  9/10  head=0.2465
+    offline ep 10/10  head=0.2456
+  [offline done]  head=0.2456  total seed: 2m53s
+
+  --- λ=0.90  seed=42 ---
+  λ=0.90  seed=42  ep= 1/10  head=0.2628  probe=0.4495  cd=0.912  [0m17s/ep  elapsed=28m42s]
+  λ=0.90  seed=42  ep= 2/10  head=0.2642  probe=0.4491  cd=0.894  [0m13s/ep  elapsed=28m55s]
+  λ=0.90  seed=42  ep= 3/10  head=0.2305  probe=0.4544  cd=0.887  [0m12s/ep  elapsed=29m07s]
+  λ=0.90  seed=42  ep= 4/10  head=0.2498  probe=0.4542  cd=0.874  [0m12s/ep  elapsed=29m20s]
+  λ=0.90  seed=42  ep= 5/10  head=0.2504  probe=0.4477  cd=0.872  [0m13s/ep  elapsed=29m33s]
+  λ=0.90  seed=42  ep= 6/10  head=0.2319  probe=0.4500  cd=0.865  [0m13s/ep  elapsed=29m46s]
+  λ=0.90  seed=42  ep= 7/10  head=0.2151  probe=0.4497  cd=0.857  [0m13s/ep  elapsed=30m00s]
+  λ=0.90  seed=42  ep= 8/10  head=0.2258  probe=0.4545  cd=0.858  [0m13s/ep  elapsed=30m13s]
+  λ=0.90  seed=42  ep= 9/10  head=0.2163  probe=0.4541  cd=0.854  [0m12s/ep  elapsed=30m26s]
+  λ=0.90  seed=42  ep=10/10  head=0.2472  probe=0.4496  cd=0.851  [0m13s/ep  elapsed=30m39s]
+  [offline Wout] training 10 ep (Win+J1 frozen)...
+    offline ep  1/10  head=0.2513
+    offline ep  2/10  head=0.2437
+    offline ep  3/10  head=0.2420
+    offline ep  4/10  head=0.2381
+    offline ep  5/10  head=0.2335
+    offline ep  6/10  head=0.2312
+    offline ep  7/10  head=0.2312
+    offline ep  8/10  head=0.2314
+    offline ep  9/10  head=0.2308
+    offline ep 10/10  head=0.2306
+  [offline done]  head=0.2306  total seed: 2m51s
+
+  --- λ=0.90  seed=123 ---
+  λ=0.90  seed=123  ep= 1/10  head=0.2805  probe=0.4481  cd=0.924  [0m18s/ep  elapsed=31m34s]
+  λ=0.90  seed=123  ep= 2/10  head=0.2906  probe=0.4531  cd=0.913  [0m12s/ep  elapsed=31m47s]
+  λ=0.90  seed=123  ep= 3/10  head=0.2774  probe=0.4526  cd=0.903  [0m12s/ep  elapsed=31m59s]
+  λ=0.90  seed=123  ep= 4/10  head=0.2647  probe=0.4482  cd=0.893  [0m12s/ep  elapsed=32m12s]
+  λ=0.90  seed=123  ep= 5/10  head=0.2450  probe=0.4478  cd=0.891  [0m12s/ep  elapsed=32m25s]
+  λ=0.90  seed=123  ep= 6/10  head=0.2724  probe=0.4520  cd=0.888  [0m13s/ep  elapsed=32m38s]
+  λ=0.90  seed=123  ep= 7/10  head=0.2036  probe=0.4448  cd=0.881  [0m12s/ep  elapsed=32m51s]
+  λ=0.90  seed=123  ep= 8/10  head=0.2238  probe=0.4500  cd=0.878  [0m12s/ep  elapsed=33m03s]
+  λ=0.90  seed=123  ep= 9/10  head=0.2117  probe=0.4410  cd=0.870  [0m12s/ep  elapsed=33m16s]
+  λ=0.90  seed=123  ep=10/10  head=0.2066  probe=0.4528  cd=0.866  [0m13s/ep  elapsed=33m29s]
+  [offline Wout] training 10 ep (Win+J1 frozen)...
+    offline ep  1/10  head=0.2493
+    offline ep  2/10  head=0.2424
+    offline ep  3/10  head=0.2371
+    offline ep  4/10  head=0.2364
+    offline ep  5/10  head=0.2344
+    offline ep  6/10  head=0.2339
+    offline ep  7/10  head=0.2320
+    offline ep  8/10  head=0.2311
+    offline ep  9/10  head=0.2293
+    offline ep 10/10  head=0.2280
+  [offline done]  head=0.2280  total seed: 2m51s
+
+  λ=0.90  head(final)=0.2312±0.0177  probe(final)=0.4505±0.0017  offline=0.2348±0.0077
+
+============================================================
+LAMBDA = 1.00  (3 seeds × 10 epochs)
+============================================================
+
+  --- λ=1.00  seed=0 ---
+  λ=1.00  seed=0  ep= 1/10  head=0.3002  probe=0.4543  cd=0.940  [0m17s/ep  elapsed=34m24s]
+  λ=1.00  seed=0  ep= 2/10  head=0.2817  probe=0.4566  cd=0.933  [0m13s/ep  elapsed=34m38s]
+  λ=1.00  seed=0  ep= 3/10  head=0.2771  probe=0.4586  cd=0.932  [0m13s/ep  elapsed=34m51s]
+  λ=1.00  seed=0  ep= 4/10  head=0.2905  probe=0.4537  cd=0.933  [0m12s/ep  elapsed=35m04s]
+  λ=1.00  seed=0  ep= 5/10  head=0.2760  probe=0.4538  cd=0.927  [0m13s/ep  elapsed=35m17s]
+  λ=1.00  seed=0  ep= 6/10  head=0.2851  probe=0.4526  cd=0.928  [0m12s/ep  elapsed=35m29s]
+  λ=1.00  seed=0  ep= 7/10  head=0.2944  probe=0.4553  cd=0.929  [0m13s/ep  elapsed=35m43s]
+  λ=1.00  seed=0  ep= 8/10  head=0.2641  probe=0.4566  cd=0.927  [0m12s/ep  elapsed=35m56s]
+  λ=1.00  seed=0  ep= 9/10  head=0.2778  probe=0.4545  cd=0.925  [0m13s/ep  elapsed=36m09s]
+  λ=1.00  seed=0  ep=10/10  head=0.2577  probe=0.4541  cd=0.920  [0m12s/ep  elapsed=36m22s]
+  [offline Wout] training 10 ep (Win+J1 frozen)...
+    offline ep  1/10  head=0.2699
+    offline ep  2/10  head=0.2620
+    offline ep  3/10  head=0.2622
+    offline ep  4/10  head=0.2594
+    offline ep  5/10  head=0.2596
+    offline ep  6/10  head=0.2589
+    offline ep  7/10  head=0.2597
+    offline ep  8/10  head=0.2585
+    offline ep  9/10  head=0.2576
+    offline ep 10/10  head=0.2582
+  [offline done]  head=0.2582  total seed: 2m49s
+
+  --- λ=1.00  seed=42 ---
+  λ=1.00  seed=42  ep= 1/10  head=0.2724  probe=0.4466  cd=0.909  [0m17s/ep  elapsed=37m14s]
+  λ=1.00  seed=42  ep= 2/10  head=0.2611  probe=0.4540  cd=0.915  [0m12s/ep  elapsed=37m27s]
+  λ=1.00  seed=42  ep= 3/10  head=0.2466  probe=0.4516  cd=0.916  [0m12s/ep  elapsed=37m40s]
+  λ=1.00  seed=42  ep= 4/10  head=0.2582  probe=0.4587  cd=0.916  [0m12s/ep  elapsed=37m52s]
+  λ=1.00  seed=42  ep= 5/10  head=0.2455  probe=0.4600  cd=0.916  [0m12s/ep  elapsed=38m05s]
+  λ=1.00  seed=42  ep= 6/10  head=0.2689  probe=0.4633  cd=0.910  [0m12s/ep  elapsed=38m18s]
+  λ=1.00  seed=42  ep= 7/10  head=0.2581  probe=0.4582  cd=0.912  [0m12s/ep  elapsed=38m30s]
+  λ=1.00  seed=42  ep= 8/10  head=0.2384  probe=0.4613  cd=0.909  [0m12s/ep  elapsed=38m43s]
+  λ=1.00  seed=42  ep= 9/10  head=0.2579  probe=0.4599  cd=0.908  [0m12s/ep  elapsed=38m56s]
+  λ=1.00  seed=42  ep=10/10  head=0.2556  probe=0.4564  cd=0.903  [0m12s/ep  elapsed=39m08s]
+  [offline Wout] training 10 ep (Win+J1 frozen)...
+    offline ep  1/10  head=0.2563
+    offline ep  2/10  head=0.2541
+    offline ep  3/10  head=0.2514
+    offline ep  4/10  head=0.2502
+    offline ep  5/10  head=0.2464
+    offline ep  6/10  head=0.2466
+    offline ep  7/10  head=0.2449
+    offline ep  8/10  head=0.2439
+    offline ep  9/10  head=0.2451
+    offline ep 10/10  head=0.2428
+  [offline done]  head=0.2428  total seed: 2m46s
+
+  --- λ=1.00  seed=123 ---
+  λ=1.00  seed=123  ep= 1/10  head=0.3035  probe=0.4588  cd=0.929  [0m17s/ep  elapsed=40m01s]
+  λ=1.00  seed=123  ep= 2/10  head=0.3170  probe=0.4622  cd=0.928  [0m12s/ep  elapsed=40m14s]
+  λ=1.00  seed=123  ep= 3/10  head=0.2988  probe=0.4640  cd=0.930  [0m12s/ep  elapsed=40m26s]
+  λ=1.00  seed=123  ep= 4/10  head=0.2895  probe=0.4554  cd=0.933  [0m12s/ep  elapsed=40m39s]
+  λ=1.00  seed=123  ep= 5/10  head=0.2725  probe=0.4613  cd=0.933  [0m12s/ep  elapsed=40m52s]
+  λ=1.00  seed=123  ep= 6/10  head=0.3202  probe=0.4626  cd=0.932  [0m12s/ep  elapsed=41m05s]
+  λ=1.00  seed=123  ep= 7/10  head=0.2951  probe=0.4587  cd=0.932  [0m12s/ep  elapsed=41m18s]
+  λ=1.00  seed=123  ep= 8/10  head=0.2778  probe=0.4540  cd=0.932  [0m12s/ep  elapsed=41m30s]
+  λ=1.00  seed=123  ep= 9/10  head=0.3007  probe=0.4582  cd=0.933  [0m12s/ep  elapsed=41m43s]
+  λ=1.00  seed=123  ep=10/10  head=0.3159  probe=0.4624  cd=0.935  [0m12s/ep  elapsed=41m55s]
+  [offline Wout] training 10 ep (Win+J1 frozen)...
+    offline ep  1/10  head=0.3055
+    offline ep  2/10  head=0.3036
+    offline ep  3/10  head=0.2986
+    offline ep  4/10  head=0.3031
+    offline ep  5/10  head=0.2946
+    offline ep  6/10  head=0.2950
+    offline ep  7/10  head=0.2942
+    offline ep  8/10  head=0.2932
+    offline ep  9/10  head=0.2895
+    offline ep 10/10  head=0.2919
+  [offline done]  head=0.2919  total seed: 2m47s
+
+  λ=1.00  head(final)=0.2764±0.0279  probe(final)=0.4576±0.0035  offline=0.2643±0.0205
+
+Total runtime: 42m31s
+
+  Lambda   Head(final)   Probe(final)     Offline
+----------------------------------------------------
+   0.00    0.2736±0.0382    0.4494±0.0040    0.3140±0.0120
+   0.50    0.2695±0.0118    0.4503±0.0045    0.2668±0.0110
+   0.70    0.2453±0.0108    0.4441±0.0013    0.2411±0.0071
+   0.90    0.2312±0.0177    0.4505±0.0017    0.2348±0.0077
+   1.00    0.2764±0.0279    0.4576±0.0035    0.2643±0.0205
+
+Accuracy results saved to /home/nardi/projects/darnax/experiments6/results/sweep.json
+Diagnostic results saved to /home/nardi/projects/darnax/experiments6/results/diagnostics.json
+
+Generating figures...
+saved accuracy.png
+saved accuracy_curves.png
+saved weight_norms.png
+saved field_fractions.png
+saved abcd.png
+saved autocorr.png
+
+All done. Total: 42m31s

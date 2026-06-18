@@ -174,8 +174,10 @@ def analyse(hC, hD, y_true, W):
     ])
 
     # aggregate: mean |W| for flipped vs non-flipped spins
-    w_flipped     = np.abs(W)[flipped].mean()    if flipped.any()    else np.nan
-    w_non_flipped = np.abs(W)[~flipped].mean()   if (~flipped).any() else np.nan
+    # W is (256,10), flipped is (N,256) — need per-spin global sensitivity
+    global_sens = np.abs(W).mean(axis=1)   # (256,) mean |weight| per spin across classes
+    w_flipped     = global_sens[flipped.any(axis=0)].mean()   if flipped.any() else np.nan
+    w_non_flipped = global_sens[~flipped.any(axis=0)].mean()  if (~flipped).any() else np.nan
 
     return {
         "acc_C":            correct_C.mean(),
@@ -205,11 +207,11 @@ def plot(res, W, figures_dir):
 
     # ── 1. W magnitude: flipped vs non-flipped spins ─────────────────────────
     # Use mean |W| across all classes for each spin (global sensitivity)
-    global_sens = np.abs(W).mean(axis=1)   # (256,)
-    # broadcast per image
+    global_sens = np.abs(W).mean(axis=1)   # (256,) mean |weight| per spin
     fig, ax = plt.subplots(figsize=(7, 4))
-    s_flip = global_sens[flipped.reshape(-1)].reshape(-1)
-    s_nflip = global_sens[(~flipped).reshape(-1)].reshape(-1)
+    ever_flipped = flipped.any(axis=0)     # (256,) which spins flip in at least one image
+    s_flip  = global_sens[ever_flipped]
+    s_nflip = global_sens[~ever_flipped]
     ax.violinplot([s_nflip, s_flip], positions=[0, 1], showmedians=True)
     ax.set_xticks([0, 1])
     ax.set_xticklabels(["Non-flipped spins", "Flipped spins (C→D)"])

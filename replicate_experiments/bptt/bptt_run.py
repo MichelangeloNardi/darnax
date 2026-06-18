@@ -197,10 +197,23 @@ def train_step(orch, opt_state, opt, state_tmpl, x, y, warmup_n, clamped_n, free
 
 @eqx.filter_jit
 def eval_step(orch, state_tmpl, x, y, warmup_n, free_n, rng):
-    """Evaluate on D state (no label injection, same as real inference)."""
+    """Evaluate on D state (no label injection, honest inference)."""
     s = state_tmpl.init(x, y)
     (s, rng), _ = scan_n(orch.step, (s, rng), warmup_n, filter_messages="forward")
     (s, rng), _ = scan_n(orch.step, (s, rng), free_n,   filter_messages="forward")
+    logits = orch.lmap[2][1](s[1])
+    y_int  = jnp.argmax(y, axis=-1)
+    acc    = jnp.mean(jnp.argmax(logits, axis=-1) == y_int)
+    return acc
+
+
+@eqx.filter_jit
+def eval_step_C(orch, state_tmpl, x, y, warmup_n, clamped_n, free_n, rng):
+    """Evaluate on C state (label injected via WBack — cheat, diagnoses train/test gap)."""
+    s = state_tmpl.init(x, y)
+    (s, rng), _ = scan_n(orch.step, (s, rng), warmup_n,  filter_messages="forward")
+    (s, rng), _ = scan_n(orch.step, (s, rng), clamped_n, filter_messages="all")
+    (s, rng), _ = scan_n(orch.step, (s, rng), free_n,    filter_messages="forward")
     logits = orch.lmap[2][1](s[1])
     y_int  = jnp.argmax(y, axis=-1)
     acc    = jnp.mean(jnp.argmax(logits, axis=-1) == y_int)
@@ -246,18 +259,20 @@ def main():
                 warmup_n, clamped_n, free_n, rng)
             ep_losses.append(float(loss))
 
-        # eval on D (honest inference, no label)
-        accs = []
+        # eval on D (honest) and C (cheat, to diagnose train/test gap)
+        accs_D, accs_C = [], []
         for xb, yb in ds.iter_test():
             key, rng = jax.random.split(key)
-            acc = eval_step(orch, state_tmpl, to_hwc(xb), yb, warmup_n, free_n, rng)
-            accs.append(float(acc))
+            accs_D.append(float(eval_step(orch, state_tmpl, to_hwc(xb), yb, warmup_n, free_n, rng)))
+            key, rng = jax.random.split(key)
+            accs_C.append(float(eval_step_C(orch, state_tmpl, to_hwc(xb), yb, warmup_n, clamped_n, free_n, rng)))
 
-        mean_acc  = float(np.mean(accs))
-        mean_loss = float(np.mean(ep_losses))
-        head_accs.append(mean_acc)
+        mean_acc_D = float(np.mean(accs_D))
+        mean_acc_C = float(np.mean(accs_C))
+        mean_loss  = float(np.mean(ep_losses))
+        head_accs.append(mean_acc_D)
         losses.append(mean_loss)
-        print(f"  epoch {epoch:2d}/{EPOCHS}  CE_loss={mean_loss:.4f}  head(D)={mean_acc:.4f}", flush=True)
+        print(f"  epoch {epoch:2d}/{EPOCHS}  CE_loss={mean_loss:.4f}  head(D)={mean_acc_D:.4f}  head(C)={mean_acc_C:.4f}", flush=True)
 
     print(f"\nFinal head accuracy (D state): {head_accs[-1]:.4f}")
     print(f"Best head accuracy:            {max(head_accs):.4f}")

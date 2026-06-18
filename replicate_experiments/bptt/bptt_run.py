@@ -68,7 +68,8 @@ from darnax.trainers.utils import scan_n
 
 EPOCHS    = 20
 SEED      = 0
-LR        = 3e-4          # Adam learning rate (same for all params)
+LR        = 1e-3          # Adam learning rate (same for all params)
+GRAD_CLIP = 1.0           # global gradient norm clipping (counters BPTT explosion)
 C, KSIZE  = 16, 5
 H, W, POOL = 32, 32, 8
 _STRIP = {"wback_type","j1_window_hebb","j1_entropy","trial_number","probe_acc","c05_j1"}
@@ -244,7 +245,8 @@ def main():
     state_tmpl, orch = build_model(cfg, mk)
 
     params, static = eqx.partition(orch, eqx.is_inexact_array)
-    opt = optax.adam(LR)
+    # Adam + global gradient clipping to tame BPTT gradient explosion
+    opt = optax.chain(optax.clip_by_global_norm(GRAD_CLIP), optax.adam(LR))
     opt_state = opt.init(params)
 
     head_accs, losses = [], []
@@ -280,11 +282,13 @@ def main():
     # save
     results_dir = HERE / "results"; results_dir.mkdir(exist_ok=True)
     figures_dir = HERE / "figures"; figures_dir.mkdir(exist_ok=True)
-    out = {"epochs": EPOCHS, "lr": LR, "seed": SEED,
+    out = {"epochs": EPOCHS, "lr": LR, "grad_clip": GRAD_CLIP, "seed": SEED,
            "warmup_n": warmup_n, "clamped_n": clamped_n, "free_n": free_n,
            "head_accs": head_accs, "losses": losses,
            "final_head": head_accs[-1], "best_head": max(head_accs)}
-    (results_dir / "run.json").write_text(json.dumps(out, indent=2))
+    fname = f"run_lr{LR}_clip{GRAD_CLIP}.json".replace("0.", "0p")
+    (results_dir / fname).write_text(json.dumps(out, indent=2))
+    print(f"Saved results/{fname}")
 
     # plot
     ep = np.arange(1, EPOCHS + 1)

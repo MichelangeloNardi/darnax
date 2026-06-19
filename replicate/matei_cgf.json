@@ -1,0 +1,23 @@
+{
+  "lr_j": 0.001353138590536092,
+  "lr_wout": 0.7400321650885163,
+  "lr_win": 0.06079550019033205,
+  "kernel_decay_rate": 0.01438343649118462,
+  "threshold_j": 3.3222342758629004,
+  "threshold_win": 1.4037416864067074,
+  "j_d": 0.7492062110663401,
+  "entropy_beta": 0.7312213411315246,
+  "momentum": 0.6062485647259589,
+  "freeze_win": false,
+  "j1_window_hebb": false,
+  "j1_entropy": true,
+  "normalize_rows": false,
+  "wback_type": "conv1x1",
+  "wback_strength": 0.8973904603571834,
+  "clamped_n_iter": 4,
+  "free_n_iter": 13,
+  "probe_wd": 0.00011114870232927787,
+  "trial_number": 13,
+  "probe_acc": 0.46799999475479126,
+  "c05_j1": 0.9554244875907898
+}

@@ -1,0 +1,152 @@
+Config:
+  lr_j: 0.0009740402572938124
+  lr_win: 0.02261680399040041
+  lr_wout: 0.04321887433959399
+  kernel_decay_rate: 0.0007847404026606365
+  threshold_j: 1.9796175431992729
+  threshold_win: 0.8510825401105292
+  j_d: 0.8953837335689401
+  entropy_beta: 0.3449405979902655
+  momentum: 0.3162081708642795
+  clamped_n_iter: 5
+  free_n_iter: 6
+  strength_back: 1.4711531428803912
+
+==================================================
+Seed 0
+==================================================
+  seed=0  epoch= 1/20  head=0.3055  probe=0.4510
+  seed=0  epoch= 2/20  head=0.2870  probe=0.4579
+  seed=0  epoch= 3/20  head=0.2774  probe=0.4653
+  seed=0  epoch= 4/20  head=0.2960  probe=0.4606
+  seed=0  epoch= 5/20  head=0.3044  probe=0.4602
+  seed=0  epoch= 6/20  head=0.2799  probe=0.4647
+  seed=0  epoch= 7/20  head=0.2622  probe=0.4547
+  seed=0  epoch= 8/20  head=0.2730  probe=0.4596
+  seed=0  epoch= 9/20  head=0.2726  probe=0.4570
+  seed=0  epoch=10/20  head=0.2685  probe=0.4585
+  seed=0  epoch=11/20  head=0.2631  probe=0.4579
+  seed=0  epoch=12/20  head=0.2640  probe=0.4561
+  seed=0  epoch=13/20  head=0.2254  probe=0.4609
+  seed=0  epoch=14/20  head=0.2768  probe=0.4582
+  seed=0  epoch=15/20  head=0.2482  probe=0.4519
+  seed=0  epoch=16/20  head=0.2700  probe=0.4531
+  seed=0  epoch=17/20  head=0.2703  probe=0.4551
+  seed=0  epoch=18/20  head=0.2492  probe=0.4590
+  seed=0  epoch=19/20  head=0.2599  probe=0.4505
+  seed=0  epoch=20/20  head=0.2550  probe=0.4596
+
+==================================================
+Seed 42
+==================================================
+  seed=42  epoch= 1/20  head=0.2396  probe=0.4581
+  seed=42  epoch= 2/20  head=0.2918  probe=0.4634
+  seed=42  epoch= 3/20  head=0.2812  probe=0.4648
+  seed=42  epoch= 4/20  head=0.2770  probe=0.4683
+  seed=42  epoch= 5/20  head=0.2875  probe=0.4614
+  seed=42  epoch= 6/20  head=0.2630  probe=0.4559
+  seed=42  epoch= 7/20  head=0.2572  probe=0.4537
+  seed=42  epoch= 8/20  head=0.2631  probe=0.4548
+  seed=42  epoch= 9/20  head=0.2795  probe=0.4575
+  seed=42  epoch=10/20  head=0.2531  probe=0.4556
+  seed=42  epoch=11/20  head=0.2670  probe=0.4608
+  seed=42  epoch=12/20  head=0.2643  probe=0.4597
+  seed=42  epoch=13/20  head=0.2520  probe=0.4606
+  seed=42  epoch=14/20  head=0.2554  probe=0.4593
+  seed=42  epoch=15/20  head=0.2695  probe=0.4559
+  seed=42  epoch=16/20  head=0.2671  probe=0.4610
+  seed=42  epoch=17/20  head=0.2439  probe=0.4595
+  seed=42  epoch=18/20  head=0.2760  probe=0.4569
+  seed=42  epoch=19/20  head=0.2738  probe=0.4611
+  seed=42  epoch=20/20  head=0.2380  probe=0.4653
+
+==================================================
+Seed 123
+==================================================
+  seed=123  epoch= 1/20  head=0.2981  probe=0.4577
+  seed=123  epoch= 2/20  head=0.2790  probe=0.4598
+  seed=123  epoch= 3/20  head=0.3043  probe=0.4584
+  seed=123  epoch= 4/20  head=0.2983  probe=0.4556
+  seed=123  epoch= 5/20  head=0.2959  probe=0.4612
+  seed=123  epoch= 6/20  head=0.2962  probe=0.4606
+  seed=123  epoch= 7/20  head=0.2984  probe=0.4625
+  seed=123  epoch= 8/20  head=0.3106  probe=0.4585
+  seed=123  epoch= 9/20  head=0.2427  probe=0.4591
+  seed=123  epoch=10/20  head=0.2550  probe=0.4591
+  seed=123  epoch=11/20  head=0.2564  probe=0.4566
+  seed=123  epoch=12/20  head=0.2615  probe=0.4565
+  seed=123  epoch=13/20  head=0.2655  probe=0.4556
+  seed=123  epoch=14/20  head=0.2625  probe=0.4547
+  seed=123  epoch=15/20  head=0.2692  probe=0.4504
+  seed=123  epoch=16/20  head=0.2825  probe=0.4526
+  seed=123  epoch=17/20  head=0.2423  probe=0.4537
+  seed=123  epoch=18/20  head=0.2653  probe=0.4523
+  seed=123  epoch=19/20  head=0.2661  probe=0.4498
+  seed=123  epoch=20/20  head=0.2736  probe=0.4548
+
+==================================================
+Seed 7
+==================================================
+  seed=7  epoch= 1/20  head=0.3176  probe=0.4525
+  seed=7  epoch= 2/20  head=0.3032  probe=0.4550
+  seed=7  epoch= 3/20  head=0.2979  probe=0.4560
+  seed=7  epoch= 4/20  head=0.2864  probe=0.4691
+  seed=7  epoch= 5/20  head=0.2628  probe=0.4651
+  seed=7  epoch= 6/20  head=0.2663  probe=0.4680
+  seed=7  epoch= 7/20  head=0.2672  probe=0.4670
+  seed=7  epoch= 8/20  head=0.2679  probe=0.4662
+  seed=7  epoch= 9/20  head=0.2605  probe=0.4711
+  seed=7  epoch=10/20  head=0.2712  probe=0.4653
+  seed=7  epoch=11/20  head=0.2797  probe=0.4637
+  seed=7  epoch=12/20  head=0.2480  probe=0.4576
+  seed=7  epoch=13/20  head=0.2446  probe=0.4578
+  seed=7  epoch=14/20  head=0.2790  probe=0.4620
+  seed=7  epoch=15/20  head=0.2545  probe=0.4658
+  seed=7  epoch=16/20  head=0.2287  probe=0.4628
+  seed=7  epoch=17/20  head=0.2558  probe=0.4660
+  seed=7  epoch=18/20  head=0.2555  probe=0.4673
+  seed=7  epoch=19/20  head=0.2440  probe=0.4647
+  seed=7  epoch=20/20  head=0.2629  probe=0.4596
+
+==================================================
+Seed 999
+==================================================
+  seed=999  epoch= 1/20  head=0.3047  probe=0.4530
+  seed=999  epoch= 2/20  head=0.3233  probe=0.4528
+  seed=999  epoch= 3/20  head=0.3246  probe=0.4558
+  seed=999  epoch= 4/20  head=0.2865  probe=0.4537
+  seed=999  epoch= 5/20  head=0.2888  probe=0.4609
+  seed=999  epoch= 6/20  head=0.2965  probe=0.4568
+  seed=999  epoch= 7/20  head=0.3057  probe=0.4561
+  seed=999  epoch= 8/20  head=0.2869  probe=0.4578
+  seed=999  epoch= 9/20  head=0.2962  probe=0.4590
+  seed=999  epoch=10/20  head=0.3049  probe=0.4606
+  seed=999  epoch=11/20  head=0.3074  probe=0.4539
+  seed=999  epoch=12/20  head=0.3125  probe=0.4606
+  seed=999  epoch=13/20  head=0.3093  probe=0.4607
+  seed=999  epoch=14/20  head=0.2991  probe=0.4595
+  seed=999  epoch=15/20  head=0.2892  probe=0.4560
+  seed=999  epoch=16/20  head=0.2804  probe=0.4620
+  seed=999  epoch=17/20  head=0.2976  probe=0.4612
+  seed=999  epoch=18/20  head=0.2903  probe=0.4598
+  seed=999  epoch=19/20  head=0.3099  probe=0.4601
+  seed=999  epoch=20/20  head=0.2861  probe=0.4611
+
+Plot saved to /home/nardi/projects/darnax/replicate/accuracy_curves.png
+
+Model head test accuracy (epoch 20):
+  seed    0: 0.2550
+  seed   42: 0.2380
+  seed  123: 0.2736
+  seed    7: 0.2629
+  seed  999: 0.2861
+  mean:       0.2631 ± 0.0163
+
+Linear probe best test accuracy (epoch 20):
+  seed    0: 0.4596
+  seed   42: 0.4653
+  seed  123: 0.4548
+  seed    7: 0.4596
+  seed  999: 0.4611
+  mean:       0.4601 ± 0.0034
+  T21 reference: 0.4501

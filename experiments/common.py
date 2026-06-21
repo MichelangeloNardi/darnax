@@ -180,6 +180,23 @@ def eval_head(trainer, ds, key):
     return float(np.mean(accs)), key
 
 
+def fit_wout(orch, state, ds, cfg, clamped_n, key, epochs):
+    """Freeze W_in/J1, re-init W_out, and train ONLY W_out for `epochs` passes.
+
+    clamped_n selects the state W_out is trained on (see make_trainer):
+      cfg["clamped_n_iter"] -> C (warmup->clamped->free)
+      0                     -> D (warmup->free, the inference state)
+    Always evaluated on D. Returns (test_accuracy, key).
+    """
+    key, wk = jax.random.split(key)
+    orch = reinit_wout(orch, wk)
+    opt, opt_state = make_optimizer(orch, cfg, win=False, j1=False, wout=True)
+    trainer = make_trainer(orch, state, opt, opt_state, cfg, clamped_n=clamped_n)
+    for _ in range(epochs):
+        trainer, key = train_epoch(trainer, ds, key, decay_rate=0.0)  # backbone frozen
+    return eval_head(trainer, ds, key)
+
+
 def fmt(seconds):
     m, s = divmod(int(seconds), 60)
     return f"{m}m{s:02d}s"

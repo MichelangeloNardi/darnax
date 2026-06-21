@@ -44,6 +44,7 @@ from darnax.trainers.dynamical import DynamicalTrainer
 # ── architecture constants (fixed across all experiments) ─────────────────────
 C, KSIZE = 16, 5
 H, W, POOL = 32, 32, 8
+PROBE_WD = 1.433e-4  # Adam linear-probe weight decay (from the tuned reference)
 
 
 # ── config / data ─────────────────────────────────────────────────────────────
@@ -200,3 +201,32 @@ def fit_wout(orch, state, ds, cfg, clamped_n, key, epochs):
 def fmt(seconds):
     m, s = divmod(int(seconds), 60)
     return f"{m}m{s:02d}s"
+
+
+# ── representation rollouts ───────────────────────────────────────────────────
+
+def make_rollout(warmup_n, clamped_n, free_n):
+    """Plain (un-jitted) rollout: warmup -> clamped -> free, returns (state, key).
+    clamped_n>0 reaches C (label injected); clamped_n=0 reaches D (inference).
+    Counts are Python ints (static), so the loops unroll cleanly under jit."""
+    def rollout(orch, state, key):
+        for _ in range(warmup_n):
+            state, key = orch.step(state, rng=key, filter_messages="forward")
+        for _ in range(clamped_n):
+            state, key = orch.step(state, rng=key, filter_messages="all")
+        for _ in range(free_n):
+            state, key = orch.step(state, rng=key, filter_messages="forward")
+        return state, key
+    return rollout
+
+
+def collect_reps(orch, state_tmpl, ds_iter, rollout_jit, key):
+    """Roll every batch to its fixed point; return pooled J1 reps (N,256) and the
+    pm1 labels (N,10). Pass a *jitted* rollout (eqx.filter_jit(make_rollout(...)))."""
+    X, Y = [], []
+    for xb, yb in ds_iter:
+        state = state_tmpl.init(to_hwc(xb), yb)
+        state, key = rollout_jit(orch, state, key)
+        X.append(np.asarray(pool_j1(np.asarray(state[1]))))
+        Y.append(np.asarray(yb))
+    return np.concatenate(X), np.concatenate(Y), key

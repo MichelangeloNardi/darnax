@@ -42,10 +42,9 @@ SEEDS = [0, 42]
 EPOCHS = 8          # backbone (W_in+J1+W_out) training epochs
 WOUT_EPOCHS = 8     # offline W_out re-training epochs
 
-# Only ChannelWBack-compatible configs. matei_cgf uses wback_type "conv1x1"
-# (a module not present in this repo), so it is skipped.
 CONFIGS = {
     "best_channel_entropy": REPO / "replicate" / "best_channel_entropy_cfg.json",
+    "matei_cgf":            REPO / "replicate" / "matei_cgf.json",
     "matei_W_out":          REPO / "replicate" / "matei_W_out_cfg.json",
 }
 

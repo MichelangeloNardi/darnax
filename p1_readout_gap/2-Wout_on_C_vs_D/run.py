@@ -33,7 +33,7 @@ import numpy as np
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
 sys.path.insert(0, str(REPO / "src"))
-sys.path.insert(0, str(REPO / "experiments"))
+sys.path.insert(0, str(REPO / "p1_readout_gap"))
 
 import common as cm
 

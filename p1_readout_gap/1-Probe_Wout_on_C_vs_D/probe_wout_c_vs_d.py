@@ -3,12 +3,6 @@
 Does fitting the readouts (linear probe + W_out) on the CLAMPED-consolidated
 representation C beat fitting them on the inference representation D?
 
-ABCD recap (matches replicate_experiments/.../diagnostics.py::_run_abcd):
-  A = after warmup            (forward-only, input W_in only, no label)
-  B = after clamped (A -> B)  ("all" messages; W_back injects the label y)
-  C = after free   (B -> C)   (forward-only) -- the state the ONLINE rule trains on
-  D = after free   (A -> D)   (forward-only, skip clamped) == inference / eval_step
-
 The online W_out is already trained on C; the linear probe is currently trained
 AND tested on D (via eval_step). Here we fit the readouts on C instead.
 

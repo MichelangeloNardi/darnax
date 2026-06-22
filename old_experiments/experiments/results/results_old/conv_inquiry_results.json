@@ -1,0 +1,26 @@
+[
+  {
+    "kernel_size": 3,
+    "condition": "Conv-Win + FC-J (frozen)",
+    "test_acc": 0.07859999686479568,
+    "n_params": 67305719
+  },
+  {
+    "kernel_size": 3,
+    "condition": "Conv-Win + Conv-J (frozen)",
+    "test_acc": 0.09049999713897705,
+    "n_params": 180616
+  },
+  {
+    "kernel_size": 3,
+    "condition": "Conv-Win (learn) + FC-J (frozen)",
+    "test_acc": 0.07859999686479568,
+    "n_params": 67305719
+  },
+  {
+    "kernel_size": 3,
+    "condition": "Conv-Win + Conv-J (both learn)",
+    "test_acc": 0.09049999713897705,
+    "n_params": 180616
+  }
+]

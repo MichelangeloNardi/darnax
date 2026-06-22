@@ -218,16 +218,20 @@ def run_seed(cfg, seed, ds, t0):
         for path in [lambda o: o.lmap[1][0].kernel, lambda o: o.lmap[1][1].kernel]:
             orch = eqx.tree_at(path, orch, path(orch) * (1.0 - cfg["kernel_decay_rate"]))
 
-        # reps at C and D (train for probe training, test for evaluation)
-        Xtr_C, Ytr, key = cm.collect_reps(orch, state, ds, roll_C, key)
-        Xtr_D, _,  key = cm.collect_reps(orch, state, ds, roll_D, key)
-        Xte_C, Yte, key = cm.collect_reps(orch, state, ds.iter_test(), roll_C, key)
-        Xte_D, _,  key = cm.collect_reps(orch, state, ds.iter_test(), roll_D, key)
-        ytr_i, yte_i = idx(Ytr), idx(Yte)
+        # reps at C and D (train for probe training, test for evaluation).
+        # NOTE: the train set reshuffles every pass, so each collect_reps call
+        # returns its OWN matching labels — Ytr_C and Ytr_D are different orderings
+        # and must not be mixed. (The test set iterates in order, so Yte matches
+        # both Xte_C and Xte_D.)
+        Xtr_C, Ytr_C, key = cm.collect_reps(orch, state, ds, roll_C, key)
+        Xtr_D, Ytr_D, key = cm.collect_reps(orch, state, ds, roll_D, key)
+        Xte_C, Yte,   key = cm.collect_reps(orch, state, ds.iter_test(), roll_C, key)
+        Xte_D, _,     key = cm.collect_reps(orch, state, ds.iter_test(), roll_D, key)
+        ytrC_i, ytrD_i, yte_i = idx(Ytr_C), idx(Ytr_D), idx(Yte)
 
-        # online probes: warm-start update on this epoch's reps
-        probe_update(probeC, optPC, Xtr_C, ytr_i, ONLINE_PROBE_PASSES)
-        probe_update(probeD, optPD, Xtr_D, ytr_i, ONLINE_PROBE_PASSES)
+        # online probes: warm-start update on this epoch's reps (matched labels)
+        probe_update(probeC, optPC, Xtr_C, ytrC_i, ONLINE_PROBE_PASSES)
+        probe_update(probeD, optPD, Xtr_D, ytrD_i, ONLINE_PROBE_PASSES)
 
         Wc, Wd = orch.lmap[2][1].W, woutD.W
         for cell, (kind, obj) in {
@@ -253,13 +257,13 @@ def run_seed(cfg, seed, ds, t0):
     # ── offline cells on the FINAL frozen backbone (reuse last-epoch reps) ──
     yte_i = idx(Yte)
     W0 = cm.reinit_wout(orch, jax.random.PRNGKey(seed + 1)).lmap[2][1].W
-    evals_C = {"eval_D": (Xte_D, yte_i), "eval_C": (Xte_C, yte_i)}  # eval states are fixed
-    for cell, Xtr_S in [("wout_offline_C", Xtr_C), ("wout_offline_D", Xtr_D)]:
-        c = offline_wout(cfg, Xtr_S, Ytr, W0, evals_C, WOUT_OFFLINE_EPOCHS, key)
-        curves[cell] = c
-    for cell, Xtr_S in [("probe_offline_C", Xtr_C), ("probe_offline_D", Xtr_D)]:
-        c = offline_probe(Xtr_S, idx(Ytr), evals_C, PROBE_OFFLINE_EPOCHS)
-        curves[cell] = c
+    evals = {"eval_D": (Xte_D, yte_i), "eval_C": (Xte_C, yte_i)}  # eval states are fixed
+    for cell, Xtr_S, Ytr_S in [("wout_offline_C", Xtr_C, Ytr_C),
+                               ("wout_offline_D", Xtr_D, Ytr_D)]:
+        curves[cell] = offline_wout(cfg, Xtr_S, Ytr_S, W0, evals, WOUT_OFFLINE_EPOCHS, key)
+    for cell, Xtr_S, Ytr_S in [("probe_offline_C", Xtr_C, Ytr_C),
+                               ("probe_offline_D", Xtr_D, Ytr_D)]:
+        curves[cell] = offline_probe(Xtr_S, idx(Ytr_S), evals, PROBE_OFFLINE_EPOCHS)
 
     print(f"  seed={seed} offline:  "
           f"woutC[D]={curves['wout_offline_C']['eval_D'][-1]:.3f} "

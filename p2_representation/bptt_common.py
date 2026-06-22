@@ -125,6 +125,37 @@ def make_soft_eval(win, j1, wout, n_steps, kind):
     return soft_logits
 
 
+# ── checkpoint-selection proxy: hard-sign linear separability ─────────────────
+# Per-epoch metric for picking the best backbone. Rolls the TRUE hard-sign
+# dynamics (independent of W_out), then scores linear separability with a quick
+# closed-form ridge readout on a held-out TRAIN subset. This tracks the reported
+# Adam-probe ceiling far better than the soft-rollout accuracy, which at low beta
+# overestimates how separable the *binary* state actually is.
+
+def make_hard_reps(win, j1, n_steps):
+    """Jitted pooled D reps from the true hard-sign dynamics (zeros -> +1, matching
+    the orchestrator). W_out-independent; identical dynamics to collect_D."""
+    @eqx.filter_jit
+    def reps(params, x):
+        win_ = eqx.tree_at(lambda m: m.kernel, win, params["win"])
+        j1_ = eqx.tree_at(lambda m: m.kernel, j1, params["j1"])
+        win_msg = win_(x)
+        h = jnp.zeros_like(win_msg)
+        for _ in range(n_steps):
+            hard = jnp.sign(win_msg + j1_(h))
+            h = jnp.where(hard == 0, 1.0, hard)
+        return cm.pool_j1(h)  # (N, 256)
+    return reps
+
+
+@eqx.filter_jit
+def ridge_acc(Xf, Yf_oh, Xe, ye_idx, lam=1.0):
+    """Closed-form ridge readout fit on (Xf, Yf_oh), accuracy on (Xe, ye_idx)."""
+    d = Xf.shape[1]
+    W = jnp.linalg.solve(Xf.T @ Xf + lam * jnp.eye(d), Xf.T @ Yf_oh)
+    return jnp.mean((Xe @ W).argmax(1) == ye_idx)
+
+
 # ── hard-sign ceiling measurement (the headline) ──────────────────────────────
 
 def orch_with_kernels(orch, params):

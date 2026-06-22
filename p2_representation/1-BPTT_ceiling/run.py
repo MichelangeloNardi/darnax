@@ -39,6 +39,7 @@ import jax
 
 jax.config.update("jax_default_matmul_precision", "high")  # TF32 corrupts sign decisions
 
+import jax.numpy as jnp
 import numpy as np
 import optax
 
@@ -57,10 +58,12 @@ SURROGATES = ["tanh", "ste"]
 
 # ── beta annealing schedule for the tanh surrogate ────────────────────────────
 
-def beta_schedule(kind: str, epochs: int) -> np.ndarray:
-    """tanh: geometric ramp 1 -> 10 (soft -> sign-like). ste: beta unused (1.0)."""
+def beta_schedule(kind: str, epochs: int, beta_max: float) -> np.ndarray:
+    """tanh: geometric ramp 1 -> beta_max (soft -> moderately sign-like). Capped at
+    a moderate value: ramping all the way to a hard sign destabilises the rollout
+    (loss rises, accuracy falls). ste: beta unused (1.0)."""
     if kind == "tanh":
-        return np.geomspace(1.0, 10.0, epochs).astype(np.float32)
+        return np.geomspace(1.0, beta_max, epochs).astype(np.float32)
     return np.ones(epochs, dtype=np.float32)
 
 
@@ -89,35 +92,59 @@ def run_one(cfg, kind, seed, ds, args, t0):
     opt_state = opt.init(params)
     step = bc.make_bptt_step(win, j1, wout, n_steps, kind, opt)
     soft_logits = bc.make_soft_eval(win, j1, wout, n_steps, kind)
+    hard_reps = bc.make_hard_reps(win, j1, n_steps)
 
-    betas = beta_schedule(kind, args.bptt_epochs)
+    betas = beta_schedule(kind, args.bptt_epochs, args.beta_max)
 
-    # collect a fixed test subset for the soft-accuracy sanity check
+    # fixed TRAIN subset for the checkpoint-selection proxy (split fit/eval halves).
+    # Selecting on train avoids leaking the test set into model selection.
+    Xsub, Ysub = [], []
+    n_sub = args.max_batches if args.max_batches is not None else args.proxy_batches
+    for xb, yb in limited(ds, n_sub):
+        Xsub.append(cm.to_hwc(xb))
+        Ysub.append(np.asarray(yb))
+    Xsub = jnp.asarray(np.concatenate(Xsub))
+    Ysub = np.concatenate(Ysub)
+    half = len(Xsub) // 2
+    Xf, Xe = Xsub[:half], Xsub[half:]
+    Yf_oh = jnp.asarray((Ysub[:half] > 0).astype(np.float32))   # onehot fit targets
+    ye_idx = jnp.asarray(np.argmax(Ysub[half:], axis=1))
+
+    # fixed test subset for the soft-accuracy sanity check (informational only)
     Xte_soft, yte_soft = [], []
     for xb, yb in limited(ds.iter_test(), args.max_batches):
         Xte_soft.append(cm.to_hwc(xb))
         yte_soft.append(np.argmax(np.asarray(yb), axis=1))
-    Xte_soft = np.concatenate(Xte_soft)
+    Xte_soft = jnp.asarray(np.concatenate(Xte_soft))
     yte_soft = np.concatenate(yte_soft)
 
-    soft_acc_curve = []
+    soft_acc_curve, sep_curve = [], []
+    best_sep, best_params, best_epoch = -1.0, params, 0
     for ep in range(args.bptt_epochs):
-        beta = jax.numpy.asarray(betas[ep])
+        beta = jnp.asarray(betas[ep])
         ep_loss = []
         for xb, yb in limited(ds, args.max_batches):
             x = cm.to_hwc(xb)
-            y_idx = jax.numpy.asarray(np.argmax(np.asarray(yb), axis=1))
+            y_idx = jnp.asarray(np.argmax(np.asarray(yb), axis=1))
             params, opt_state, loss = step(params, opt_state, x, y_idx, beta)
             ep_loss.append(float(loss))
+        # checkpoint-selection proxy: hard-sign linear separability on the train subset
+        sep = float(bc.ridge_acc(hard_reps(params, Xf), Yf_oh, hard_reps(params, Xe), ye_idx))
+        sep_curve.append(sep)
+        if sep > best_sep:
+            best_sep, best_params, best_epoch = sep, params, ep + 1  # params leaves are immutable
         # soft sanity check (on the surrogate's own forward)
-        logits = soft_logits(params, jax.numpy.asarray(Xte_soft), beta)
+        logits = soft_logits(params, Xte_soft, beta)
         soft_acc = float((np.asarray(logits).argmax(1) == yte_soft).mean())
         soft_acc_curve.append(soft_acc)
         print(f"    [{kind} seed {seed}] ep {ep + 1:2d}/{args.bptt_epochs}  "
               f"beta={float(betas[ep]):.2f}  loss={np.mean(ep_loss):.4f}  "
-              f"soft_acc={soft_acc:.4f}  ({cm.fmt(time.time() - t0)})")
+              f"sep={sep:.4f}  soft_acc={soft_acc:.4f}  ({cm.fmt(time.time() - t0)})")
 
-    # ── hard-sign ceiling (the headline) ──────────────────────────────────────
+    print(f"  [{kind} seed {seed}]  best checkpoint: epoch {best_epoch} (sep={best_sep:.4f})")
+
+    # ── hard-sign ceiling (the headline) — measured on the BEST checkpoint ─────
+    params = best_params
     orch_opt = bc.orch_with_kernels(orch, params)
     if args.max_batches is not None:
         # smoke: cap rep collection by slicing a tiny ds-like loop inline
@@ -137,6 +164,9 @@ def run_one(cfg, kind, seed, ds, args, t0):
 
     return {
         "soft_acc_curve": soft_acc_curve,
+        "sep_curve": sep_curve,
+        "best_epoch": best_epoch,
+        "best_sep": best_sep,
         "wout_curve": wout_curve,
         "probe_curve": probe_curve,
         "wout_final": wout_curve[-1],
@@ -175,6 +205,10 @@ def main():
     ap.add_argument("--readout-epochs", type=int, default=10)
     ap.add_argument("--probe-epochs", type=int, default=20)
     ap.add_argument("--lr", type=float, default=1e-3)
+    ap.add_argument("--beta-max", type=float, default=4.0,
+                    help="tanh surrogate: final (capped) inverse temperature")
+    ap.add_argument("--proxy-batches", type=int, default=128,
+                    help="train batches for the checkpoint-selection separability proxy")
     ap.add_argument("--max-batches", type=int, default=None,
                     help="cap batches per pass (smoke only)")
     args = ap.parse_args()

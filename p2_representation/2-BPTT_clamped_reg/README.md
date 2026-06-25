@@ -37,11 +37,35 @@ As in exp 1, the **ceiling is measured on the true hard-sign D dynamics** (perce
 `W_out` + Adam probe on hard D reps), and the best backbone is checkpointed by the
 per-epoch hard-sign separability proxy.
 
-## Results
+## Results (3 seeds, probe accuracy on hard-sign D)
 
-_(filled in on completion — see `results/clamped_reg.json` and `figures/clamped_reg.png`.)_
+| variant | α=0.1 | α=0.3 | α=1.0 |
+|---|---|---|---|
+| `ce_D_reg_pool` | 0.504 ± 0.003 | 0.512 ± 0.001 | 0.495 ± 0.004 |
+| `ce_C_reg_pool` | 0.395 ± 0.014 | 0.401 ± 0.002 | 0.397 ± 0.007 |
+| `ce_D_reg_full` | 0.509 ± 0.004 | **0.516 ± 0.005** | 0.471 ± 0.003 |
+| `ce_C_reg_full` | 0.393 ± 0.006 | 0.390 ± 0.005 | 0.399 ± 0.012 |
 
-References: exp-1 plain BPTT (tanh) probe **0.506** / W_out 0.480; gradient-free ~0.46.
+(W_out perceptron tracks ~2 pts below in every cell.) References: exp-1 plain BPTT
+(tanh) probe **0.506** / W_out 0.480; gradient-free ~0.46.
+
+**Findings:**
+- **CE on D + a mild clamped pull helps a little.** Best is `ce_D_reg_full` α=0.3 →
+  **0.516**, ~1 pt over plain BPTT (0.506) and ~5.5 pts over gradient-free. Pooled
+  alignment (`ce_D_reg_pool` α=0.3) gives 0.512. The gain is small but consistent
+  across seeds.
+- **α matters and is mild.** α=0.3 > α=0.1 ≳ plain BPTT; α=1.0 over-constrains and
+  *hurts* (0.471–0.495) — forcing D≈C too hard sacrifices the CE objective.
+- **CE on C always collapses (~0.39–0.40).** The clamped state is trivially label-
+  separable (the label is injected through W_back), so CE→0 almost immediately
+  without ever pressuring D to be good; the distance term alone can't rescue D, and
+  the checkpoint proxy bails out at early epochs. CE on C is the wrong objective.
+- **Full-spin vs pooled alignment** behave almost identically for CE-on-D (full
+  marginally better at α=0.3); the regularizer space is a second-order knob.
+
+Takeaway: the clamped-distance regularizer is a modest improvement (~+1 pt over
+plain BPTT) only in the CE-on-D + mild-α regime. The BPTT representation ceiling is
+still ~0.51–0.52; pulling D toward C nudges it but does not unlock a new regime.
 
 ## Files
 - `run.py` — sweep (4 variants × α × seeds). `--smoke` for a tiny CPU run; knobs

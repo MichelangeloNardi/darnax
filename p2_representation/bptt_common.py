@@ -97,6 +97,61 @@ def _ce_loss(params, win, j1, wout, x, y_idx, n_steps, kind, beta):
     return optax.softmax_cross_entropy_with_integer_labels(logits, y_idx).mean()
 
 
+# ── differentiable rollout to BOTH C and D (for the clamped-distance regularizer)─
+
+def diff_forward_CD(params, win, j1, wback, wout, x, y, warmup, clamped, free, kind, beta):
+    """Roll the same input to both states, sharing the warmup phase:
+      D (inference) = warmup -> free                 (forward messages only)
+      C (clamped)   = warmup -> clamped -> free       (clamped phase injects the
+                      label through the frozen W_back, filter_messages="all")
+    Returns (logitsD, hD, logitsC, hC). W_back is frozen (not in params); its
+    message wback(y) is constant across clamped steps so it is computed once."""
+    win_ = eqx.tree_at(lambda m: m.kernel, win, params["win"])
+    j1_ = eqx.tree_at(lambda m: m.kernel, j1, params["j1"])
+    wout_ = eqx.tree_at(lambda m: m.W, wout, params["wout"])
+
+    win_msg = win_(x)
+    back_msg = wback(y)
+    h = jnp.zeros_like(win_msg)
+    for _ in range(warmup):
+        h = apply_phi(kind, beta, win_msg + j1_(h))
+
+    hD = h
+    for _ in range(free):
+        hD = apply_phi(kind, beta, win_msg + j1_(hD))
+
+    hC = h
+    for _ in range(clamped):
+        hC = apply_phi(kind, beta, win_msg + j1_(hC) + back_msg)
+    for _ in range(free):
+        hC = apply_phi(kind, beta, win_msg + j1_(hC))
+
+    return wout_(hD), hD, wout_(hC), hC
+
+
+def _reg_loss(params, win, j1, wback, wout, x, y, y_idx,
+              warmup, clamped, free, kind, beta, ce_on, reg_space, alpha):
+    """CE(W_out·pool(state), y) + alpha * MSE( <space>(D), stopgrad(<space>(C)) ).
+
+    ce_on    : "D" or "C" — which state feeds the cross-entropy term.
+    reg_space: "pool" (pooled 256-dim) or "full" (raw 32x32x16 spins).
+    The distance is a per-element MSE (mean over batch AND features) so alpha is
+    comparable across the pooled and full-spin variants. C is the stop-gradient
+    target: only D is pulled toward C."""
+    logitsD, hD, logitsC, hC = diff_forward_CD(
+        params, win, j1, wback, wout, x, y, warmup, clamped, free, kind, beta)
+    logits = logitsD if ce_on == "D" else logitsC
+    ce = optax.softmax_cross_entropy_with_integer_labels(logits, y_idx).mean()
+
+    if reg_space == "pool":
+        dD, dC = cm.pool_j1(hD), cm.pool_j1(hC)
+    else:
+        n = hD.shape[0]
+        dD, dC = hD.reshape(n, -1), hC.reshape(n, -1)
+    reg = jnp.mean((dD - jax.lax.stop_gradient(dC)) ** 2)
+    return ce + alpha * reg
+
+
 def make_bptt_step(win, j1, wout, n_steps, kind, opt):
     """Build a jitted BPTT step. The J1 gradient is masked by update_mask and the
     j_d constraint re-asserted each step, so the frozen self-coupling cannot move.
@@ -111,6 +166,29 @@ def make_bptt_step(win, j1, wout, n_steps, kind, opt):
         upd, opt_state = opt.update(grads, opt_state, params)
         params = optax.apply_updates(params, upd)
         params = {**params, "j1": j1._apply_jd_constraint(params["j1"])}  # safety net
+        return params, opt_state, loss
+
+    return step
+
+
+def make_reg_bptt_step(win, j1, wback, wout, warmup, clamped, free, kind, ce_on, reg_space, opt):
+    """BPTT step for the clamped-distance regularized loss. ce_on/reg_space are
+    static; beta and alpha are traced. J1 grad masked + j_d re-asserted, as usual."""
+    j1_mask = j1.update_mask
+
+    def loss_fn(params, x, y, y_idx, beta, alpha):
+        return _reg_loss(params, win, j1, wback, wout, x, y, y_idx,
+                         warmup, clamped, free, kind, beta, ce_on, reg_space, alpha)
+
+    grad_fn = jax.value_and_grad(loss_fn)
+
+    @eqx.filter_jit
+    def step(params, opt_state, x, y, y_idx, beta, alpha):
+        loss, grads = grad_fn(params, x, y, y_idx, beta, alpha)
+        grads = {**grads, "j1": grads["j1"] * j1_mask}
+        upd, opt_state = opt.update(grads, opt_state, params)
+        params = optax.apply_updates(params, upd)
+        params = {**params, "j1": j1._apply_jd_constraint(params["j1"])}
         return params, opt_state, loss
 
     return step

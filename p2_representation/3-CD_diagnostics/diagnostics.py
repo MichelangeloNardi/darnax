@@ -129,7 +129,7 @@ def diagnose(orch, cfg, ds, state_tmpl, roll_D, roll_C, free_cont, args):
         out[f"probe_{tag}"] = max(acc)
 
     # --- spin-level subset (batched -> host numpy) ---
-    Cs, Cf, Ds, Cps, Ys = [], [], [], [], []
+    Cs, Cf, Ds, Df, Cps, Ys = [], [], [], [], [], []
     nb = 0
     for xb, yb in ds.iter_test():
         if (args.max_batches is not None and nb >= args.max_batches) or \
@@ -140,22 +140,29 @@ def diagnose(orch, cfg, ds, state_tmpl, roll_D, roll_C, free_cont, args):
         sD = roll_D(orch, state_tmpl.init(x, y), key)
         sCp = free_cont(orch, sC, key)
         Cs.append(np.asarray(sC[1])); Cf.append(np.asarray(sC.fields[1]))
-        Ds.append(np.asarray(sD[1])); Cps.append(np.asarray(sCp[1]))
+        Ds.append(np.asarray(sD[1])); Df.append(np.asarray(sD.fields[1]))
+        Cps.append(np.asarray(sCp[1]))
         Ys.append(np.argmax(np.asarray(yb), 1)); nb += 1
     Cs = np.concatenate(Cs); Cf = np.concatenate(Cf)
-    Ds = np.concatenate(Ds); Cps = np.concatenate(Cps); Ys = np.concatenate(Ys)
+    Ds = np.concatenate(Ds); Df = np.concatenate(Df)
+    Cps = np.concatenate(Cps); Ys = np.concatenate(Ys)
     N = Cs.shape[0]
 
     flip = (np.sign(Cs) != np.sign(Ds))                 # (N,H,W,C) bool
     out["flip_rate"] = float(flip.mean())                                  # diag 3
     out["overlap_CD"] = float((Cs * Ds).mean())                            # diag 4
 
-    margin_C = Cs * Cf                                  # diag 6/7 base
+    margin_C = Cs * Cf                                  # diag 6 base (= C·field_C)
     fl, st = flip, ~flip
     out["margin_flipped"] = float(margin_C[fl].mean()) if fl.any() else 0.0
     out["margin_stable"] = float(margin_C[st].mean()) if st.any() else 0.0  # diag 6
-    out["fieldC_on_flipped"] = float((Cf * Cs)[fl].mean()) if fl.any() else 0.0  # diag 7
-    out["fieldC_on_stable"] = float((Cf * Cs)[st].mean()) if st.any() else 0.0
+
+    # diag 7: the FREE-phase field (at D) projected on the clamped state C.
+    # On flipped spins sign(field_D)=sign(D)=-sign(C), so field_D·C is NEGATIVE: it
+    # measures how hard the free dynamics push AGAINST C where the spin flips.
+    fieldD_dot_C = Df * Cs
+    out["fieldD_dot_C_flipped"] = float(fieldD_dot_C[fl].mean()) if fl.any() else 0.0
+    out["fieldD_dot_C_stable"] = float(fieldD_dot_C[st].mean()) if st.any() else 0.0
 
     # importances (diag 5)
     absW = np.abs(np.asarray(orch.lmap[2][1].W))        # (256,10)

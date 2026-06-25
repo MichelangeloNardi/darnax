@@ -34,7 +34,7 @@ def main():
         return [M[m]["std"][k] for m in MODELS]
 
     FIGDIR.mkdir(exist_ok=True)
-    fig, axes = plt.subplots(2, 3, figsize=(16, 9))
+    fig, axes = plt.subplots(2, 4, figsize=(20, 9))
     x = np.arange(3)
     cols = [COL[m] for m in MODELS]
 
@@ -81,6 +81,18 @@ def main():
     ax.bar(x - 0.2, mean("mean_imp_field_flipped"), 0.4, yerr=std("mean_imp_field_flipped"), capsize=3, label="really flipped", color="#C66")
     ax.bar(x + 0.2, mean("mean_imp_field_random"), 0.4, yerr=std("mean_imp_field_random"), capsize=3, label="random (matched count)", color="#66C")
     ax.set_title("8: |field| of flipped vs random spins"); ax.set_xticks(x); ax.set_xticklabels(LABELS); ax.legend(fontsize=8)
+
+    # 7: free-phase field·C, flipped vs stable
+    ax = axes[1, 3]
+    ax.bar(x - 0.2, mean("fieldD_dot_C_flipped"), 0.4, yerr=std("fieldD_dot_C_flipped"),
+           capsize=3, label="flipped", color="#E88")
+    ax.bar(x + 0.2, mean("fieldD_dot_C_stable"), 0.4, yerr=std("fieldD_dot_C_stable"),
+           capsize=3, label="stable", color="#4A8")
+    ax.axhline(0, color="k", lw=0.6)
+    ax.set_title("7: free-phase field_D · C (flipped vs stable)")
+    ax.set_xticks(x); ax.set_xticklabels(LABELS); ax.legend(fontsize=8)
+
+    axes[0, 3].axis("off")  # spare slot
 
     fig.suptitle("C/D diagnostics — A local-rule vs B BPTT CE_D vs C BPTT CE_D+align "
                  "(best_channel_entropy, 3 seeds)", fontsize=12)

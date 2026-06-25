@@ -22,7 +22,8 @@ re-runnable in ~2 min. The orchestrator stores the pre-activation **field**
 | 2. D probe acc | 0.451 | 0.498 | 0.497 |
 | 3. C–D flip rate | 0.052 | 0.236 | 0.219 |
 | 4. overlap(C,D) | 0.896 | 0.528 | 0.563 |
-| 6. margin flipped / stable | 3.49 / 10.31 | 4.08 / 6.12 | 3.34 / 5.28 |
+| 6. margin (C·field_C) flipped / stable | 3.49 / 10.31 | 4.08 / 6.12 | 3.34 / 5.28 |
+| 7. field_D·C flipped / stable | −3.16 / 10.26 | −3.57 / 6.34 | −2.80 / 5.29 |
 | 5. corr(readout-imp, flip) | 0.014 | −0.003 | 0.002 |
 | 5. corr(\|field\|, flip) | −0.196 | −0.234 | −0.249 |
 | 8. \|field\| flipped vs random | 3.49 / 9.86 | 4.08 / 5.61 | 3.34 / 4.84 |
@@ -57,7 +58,15 @@ re-runnable in ~2 min. The orchestrator stores the pre-activation **field**
 - `diagnostics.py` — loads models, computes the 9 diagnostics → `results/diagnostics.json`.
 - `plot.py` — regenerates `figures/diagnostics.png`.
 
-`models/` is git-ignored (regenerate with `train_models.py`). Caveat: diagnostics #6
-and #7 coincide in this implementation (both `C·field_C`); a distinct #7
-(`field_D·C` on flipped spins) can be added cheaply since the models are serialized.
-Run from repo root with `XLA_PYTHON_CLIENT_PREALLOCATE=false`.
+`models/` is git-ignored (regenerate with `train_models.py`). Run from repo root with
+`XLA_PYTHON_CLIENT_PREALLOCATE=false`.
+
+Note on #6 vs #7: #6 is the margin at C (`C·field_C`, the clamped-phase field that
+produced C); #7 is the *free-phase* field at D projected on C (`field_D·C`). On
+flipped spins #7 is **negative** (the free dynamics push against C exactly where the
+spin flips) while on stable spins it stays strongly positive — the free field
+reinforces C. The stable-spin reinforcement is much larger for the local rule (A
++10.3) than BPTT (+5–6), i.e. A's surviving spins are far more deeply pinned.
+
+Diagnostic #5 is refined at the pooled-feature level in `../4-feature_damage/` (the
+per-spin readout importance is block-constant under 8×8 pooling, so it's too coarse).

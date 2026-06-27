@@ -194,6 +194,61 @@ def make_reg_bptt_step(win, j1, wback, wout, warmup, clamped, free, kind, ce_on,
     return step
 
 
+def diff_forward_traj(params, win, j1, wout, x, n_steps, kind, beta):
+    """Like diff_forward but also returns the per-step input-only fields
+    h_t = W_in(x) + J1(s_t). fields[-1] is the field at the final state D.
+    Returns (logits, h_final, fields) with fields shape (n_steps+1, N, H, W, C)."""
+    win_ = eqx.tree_at(lambda m: m.kernel, win, params["win"])
+    j1_ = eqx.tree_at(lambda m: m.kernel, j1, params["j1"])
+    wout_ = eqx.tree_at(lambda m: m.W, wout, params["wout"])
+    win_msg = win_(x)
+    h = jnp.zeros_like(win_msg)
+    fields = []
+    for _ in range(n_steps):
+        field = win_msg + j1_(h)
+        fields.append(field)
+        h = apply_phi(kind, beta, field)
+    fields.append(win_msg + j1_(h))          # field at the final state D
+    return wout_(h), h, jnp.stack(fields)
+
+
+def field_penalty(fields_used, C_A, M, kappa):
+    """mean_{i in M} ReLU(kappa - C_A[i] * field[i]) per example. fields_used may carry
+    leading axes (e.g. trajectory steps); C_A and M are (N,H,W,C)."""
+    pen = jax.nn.relu(kappa - C_A * fields_used)
+    num = (pen * M).sum(axis=(-3, -2, -1))
+    den = M.sum(axis=(-3, -2, -1)) + 1e-8
+    return num / den                          # (..., N)
+
+
+def make_field_step(win, j1, wout, n_steps, kind, exp1, opt, kappa):
+    """BPTT step for the teacher-field loss: CE(Wout.pool(D), y) + gamma * field term.
+    exp1=True -> field term on the final D field only; exp1=False -> mean over all
+    trajectory fields. C_A (teacher clamped, +-1) and M (top-k mask) are per-batch
+    constants. beta and gamma are traced; kappa is static."""
+    j1_mask = j1.update_mask
+
+    def loss_fn(params, x, y_idx, C_A, M, beta, gamma):
+        logits, _, fields = diff_forward_traj(params, win, j1, wout, x, n_steps, kind, beta)
+        ce = optax.softmax_cross_entropy_with_integer_labels(logits, y_idx).mean()
+        used = fields[-1] if exp1 else fields
+        fl = field_penalty(used, C_A, M, kappa).mean()
+        return ce + gamma * fl
+
+    grad_fn = jax.value_and_grad(loss_fn)
+
+    @eqx.filter_jit
+    def step(params, opt_state, x, y_idx, C_A, M, beta, gamma):
+        loss, grads = grad_fn(params, x, y_idx, C_A, M, beta, gamma)
+        grads = {**grads, "j1": grads["j1"] * j1_mask}
+        upd, opt_state = opt.update(grads, opt_state, params)
+        params = optax.apply_updates(params, upd)
+        params = {**params, "j1": j1._apply_jd_constraint(params["j1"])}
+        return params, opt_state, loss
+
+    return step
+
+
 def make_soft_eval(win, j1, wout, n_steps, kind):
     """Jitted soft-rollout logits (for the internal soft-accuracy sanity check)."""
     @eqx.filter_jit

@@ -1,4 +1,4 @@
-"""Predictive-coding (PC) error-driven clamped feedback — shared infra for exp 6.
+"""Predictive-coding (PC) error-driven clamped feedback — shared infra for exp 7.
 
 Mattia's idea: replace the STATIC label clamp  W_back(y)  with a CLOSED-LOOP error
 field that depends on the current hidden state s_t. During the clamped phase:

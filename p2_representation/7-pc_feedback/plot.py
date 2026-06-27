@@ -1,4 +1,4 @@
-"""Regenerate figures/pc_feedback.png from the exp-6 result JSONs (png/log gitignored).
+"""Regenerate figures/pc_feedback.png from the exp-7 result JSONs (png/log gitignored).
 
 Left   : C/D probe accuracy per model (raw clamp vs PC-feedback variants).
 Middle : C->D flip rate, overlap(C,D), C-free stability.
@@ -6,7 +6,7 @@ Right  : full-spin control -- C-probe under the ACTUAL C->D flips vs random flip
          the same count. If PC makes C less label-imprinted, the gap (random - actual)
          shrinks toward the BPTT regime while the C-probe itself stays informative.
 
-Run:  python p2_representation/6-pc_feedback/plot.py
+Run:  python p2_representation/7-pc_feedback/plot.py
 """
 from __future__ import annotations
 

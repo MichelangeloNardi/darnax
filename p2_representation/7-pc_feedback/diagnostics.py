@@ -11,8 +11,8 @@ Models: the raw-clamp baseline + the best-beta wback / wout from train_models' s
 C-D flip rate, overlap(C,D), C-free stability, margins/fields, importance-vs-flip.
 
 Run (cluster): XLA_PYTHON_CLIENT_PREALLOCATE=false \
-  ~/miniforge3/envs/darnax_hpc/bin/python p2_representation/6-pc_feedback/diagnostics.py
-Smoke:  python p2_representation/6-pc_feedback/diagnostics.py --smoke
+  ~/miniforge3/envs/darnax_hpc/bin/python p2_representation/7-pc_feedback/diagnostics.py
+Smoke:  python p2_representation/7-pc_feedback/diagnostics.py --smoke
 """
 from __future__ import annotations
 

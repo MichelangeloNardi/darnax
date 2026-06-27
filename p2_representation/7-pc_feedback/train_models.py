@@ -1,4 +1,4 @@
-"""Train + SERIALIZE the exp-6 models: the raw-clamp baseline and the two instant
+"""Train + SERIALIZE the exp-7 models: the raw-clamp baseline and the two instant
 PC-feedback variants (wback, wout) over a small beta grid, per seed.
 
   raw            standard local rule, static W_back(y) clamp     (== exp-3 model A)
@@ -13,8 +13,8 @@ writes select.json picking the best beta per variant by a quick hard-sign D-ridg
 
 Run (cluster):
   XLA_PYTHON_CLIENT_PREALLOCATE=false \
-    ~/miniforge3/envs/darnax_hpc/bin/python p2_representation/6-pc_feedback/train_models.py
-Smoke:  python p2_representation/6-pc_feedback/train_models.py --smoke
+    ~/miniforge3/envs/darnax_hpc/bin/python p2_representation/7-pc_feedback/train_models.py
+Smoke:  python p2_representation/7-pc_feedback/train_models.py --smoke
 """
 from __future__ import annotations
 

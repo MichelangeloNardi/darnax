@@ -10,8 +10,8 @@ importance-blind (BPTT-like) while C stays class-informative.
 Only the C-roller changes (PC clamped phase); analyze() takes roll_C / roll_D as args.
 
 Run (cluster): XLA_PYTHON_CLIENT_PREALLOCATE=false \
-  ~/miniforge3/envs/darnax_hpc/bin/python p2_representation/6-pc_feedback/fullspin_importance.py
-Smoke:  python p2_representation/6-pc_feedback/fullspin_importance.py --smoke
+  ~/miniforge3/envs/darnax_hpc/bin/python p2_representation/7-pc_feedback/fullspin_importance.py
+Smoke:  python p2_representation/7-pc_feedback/fullspin_importance.py --smoke
 """
 from __future__ import annotations
 

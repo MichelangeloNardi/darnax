@@ -1,0 +1,212 @@
+{
+  "config": "best_channel_entropy",
+  "seeds": [
+    0,
+    42,
+    123
+  ],
+  "k": 256,
+  "kappa": 1.0,
+  "experiments": {
+    "exp1_endpoint": {
+      "1.0": {
+        "per_seed": [
+          {
+            "probe_acc": 0.4989,
+            "wout_acc": 0.4852,
+            "cprobe_transfer_D": 0.2746,
+            "overlap_D_CA": 0.50457763671875,
+            "field_margin_on_M": 0.3145037591457367,
+            "flip_rate_on_M": 0.4272189670138889,
+            "best_sep": 0.41015625
+          },
+          {
+            "probe_acc": 0.4995,
+            "wout_acc": 0.4818,
+            "cprobe_transfer_D": 0.3108,
+            "overlap_D_CA": 0.6058306694030762,
+            "field_margin_on_M": 0.17612366378307343,
+            "flip_rate_on_M": 0.46432059151785715,
+            "best_sep": 0.416015625
+          },
+          {
+            "probe_acc": 0.5069,
+            "wout_acc": 0.4891,
+            "cprobe_transfer_D": 0.309,
+            "overlap_D_CA": 0.5637369751930237,
+            "field_margin_on_M": 0.24754324555397034,
+            "flip_rate_on_M": 0.44548494853670634,
+            "best_sep": 0.435546875
+          }
+        ],
+        "mean": {
+          "probe_acc": 0.5017666666666667,
+          "wout_acc": 0.4853666666666667,
+          "cprobe_transfer_D": 0.29813333333333336,
+          "overlap_D_CA": 0.55804842710495,
+          "field_margin_on_M": 0.24605688949426016,
+          "flip_rate_on_M": 0.44567483568948413,
+          "best_sep": 0.4205729166666667
+        },
+        "std": {
+          "probe_acc": 0.003638070306571273,
+          "wout_acc": 0.00298254179443566,
+          "cprobe_transfer_D": 0.01665679707773643,
+          "overlap_D_CA": 0.041531625230708635,
+          "field_margin_on_M": 0.056503213117468656,
+          "flip_rate_on_M": 0.015147269898267849,
+          "best_sep": 0.010855033854513715
+        }
+      },
+      "3.0": {
+        "per_seed": [
+          {
+            "probe_acc": 0.4728,
+            "wout_acc": 0.4538,
+            "cprobe_transfer_D": 0.227,
+            "overlap_D_CA": 0.43772464990615845,
+            "field_margin_on_M": 0.24839510023593903,
+            "flip_rate_on_M": 0.40404498387896826,
+            "best_sep": 0.40234375
+          },
+          {
+            "probe_acc": 0.4925,
+            "wout_acc": 0.4708,
+            "cprobe_transfer_D": 0.23,
+            "overlap_D_CA": 0.5361396670341492,
+            "field_margin_on_M": 0.23613154888153076,
+            "flip_rate_on_M": 0.44061376178075395,
+            "best_sep": 0.40869140625
+          },
+          {
+            "probe_acc": 0.4936,
+            "wout_acc": 0.4765,
+            "cprobe_transfer_D": 0.2311,
+            "overlap_D_CA": 0.4852822422981262,
+            "field_margin_on_M": 0.21626555919647217,
+            "flip_rate_on_M": 0.41784086681547616,
+            "best_sep": 0.412109375
+          }
+        ],
+        "mean": {
+          "probe_acc": 0.4863,
+          "wout_acc": 0.46703333333333336,
+          "cprobe_transfer_D": 0.2293666666666667,
+          "overlap_D_CA": 0.4863821864128113,
+          "field_margin_on_M": 0.233597402771314,
+          "flip_rate_on_M": 0.4208332041583995,
+          "best_sep": 0.40771484375
+        },
+        "std": {
+          "probe_acc": 0.009556498661469407,
+          "wout_acc": 0.009642383292296339,
+          "cprobe_transfer_D": 0.0017326921891156013,
+          "overlap_D_CA": 0.04018529006877392,
+          "field_margin_on_M": 0.013238662425704529,
+          "flip_rate_on_M": 0.015078338577529521,
+          "best_sep": 0.004046159796437517
+        }
+      }
+    },
+    "exp2_trajectory": {
+      "1.0": {
+        "per_seed": [
+          {
+            "probe_acc": 0.4914,
+            "wout_acc": 0.4662,
+            "cprobe_transfer_D": 0.2714,
+            "overlap_D_CA": 0.5507752895355225,
+            "field_margin_on_M": 0.2255571335554123,
+            "flip_rate_on_M": 0.45143539186507936,
+            "best_sep": 0.42578125
+          },
+          {
+            "probe_acc": 0.4995,
+            "wout_acc": 0.48,
+            "cprobe_transfer_D": 0.2874,
+            "overlap_D_CA": 0.5865778923034668,
+            "field_margin_on_M": 0.19838422536849976,
+            "flip_rate_on_M": 0.45942227802579366,
+            "best_sep": 0.42724609375
+          },
+          {
+            "probe_acc": 0.5088,
+            "wout_acc": 0.486,
+            "cprobe_transfer_D": 0.2911,
+            "overlap_D_CA": 0.5628538131713867,
+            "field_margin_on_M": 0.21641413867473602,
+            "flip_rate_on_M": 0.4538012307787698,
+            "best_sep": 0.43994140625
+          }
+        ],
+        "mean": {
+          "probe_acc": 0.4999,
+          "wout_acc": 0.4774,
+          "cprobe_transfer_D": 0.2833,
+          "overlap_D_CA": 0.5667356650034586,
+          "field_margin_on_M": 0.2134518325328827,
+          "flip_rate_on_M": 0.45488630022321425,
+          "best_sep": 0.4309895833333333
+        },
+        "std": {
+          "probe_acc": 0.007109149034870499,
+          "wout_acc": 0.008289752710425074,
+          "cprobe_transfer_D": 0.008549074023931888,
+          "overlap_D_CA": 0.014871856451576,
+          "field_margin_on_M": 0.011289321742016245,
+          "flip_rate_on_M": 0.0033496884840735724,
+          "best_sep": 0.0063580810496824906
+        }
+      },
+      "3.0": {
+        "per_seed": [
+          {
+            "probe_acc": 0.4851,
+            "wout_acc": 0.468,
+            "cprobe_transfer_D": 0.2476,
+            "overlap_D_CA": 0.4606153070926666,
+            "field_margin_on_M": 0.3191477954387665,
+            "flip_rate_on_M": 0.42752511160714285,
+            "best_sep": 0.4140625
+          },
+          {
+            "probe_acc": 0.4889,
+            "wout_acc": 0.4735,
+            "cprobe_transfer_D": 0.2364,
+            "overlap_D_CA": 0.517174482345581,
+            "field_margin_on_M": 0.235004723072052,
+            "flip_rate_on_M": 0.4419042193700397,
+            "best_sep": 0.400390625
+          },
+          {
+            "probe_acc": 0.4954,
+            "wout_acc": 0.4799,
+            "cprobe_transfer_D": 0.2807,
+            "overlap_D_CA": 0.5573669672012329,
+            "field_margin_on_M": 0.23554840683937073,
+            "flip_rate_on_M": 0.4379359654017857,
+            "best_sep": 0.427734375
+          }
+        ],
+        "mean": {
+          "probe_acc": 0.4898,
+          "wout_acc": 0.4738,
+          "cprobe_transfer_D": 0.25489999999999996,
+          "overlap_D_CA": 0.5117189188798269,
+          "field_margin_on_M": 0.2632336417833964,
+          "flip_rate_on_M": 0.4357884321263228,
+          "best_sep": 0.4140625
+        },
+        "std": {
+          "probe_acc": 0.004252842186898871,
+          "wout_acc": 0.004862783839187851,
+          "cprobe_transfer_D": 0.018807622568168123,
+          "overlap_D_CA": 0.03968663345920167,
+          "field_margin_on_M": 0.039537900233041906,
+          "flip_rate_on_M": 0.006063475867364397,
+          "best_sep": 0.011163039192371254
+        }
+      }
+    }
+  }
+}

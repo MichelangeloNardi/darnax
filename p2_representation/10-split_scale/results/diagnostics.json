@@ -1,0 +1,1055 @@
+{
+  "config": "best_channel_entropy",
+  "seeds": [
+    0,
+    42,
+    123
+  ],
+  "names": [
+    "baseline_C16",
+    "standard_C24",
+    "split_C24_I16_L8_N0",
+    "split_C32_I16_L8_N8",
+    "standard_C32"
+  ],
+  "configs": {
+    "baseline_C16": [
+      16,
+      16,
+      16
+    ],
+    "standard_C24": [
+      24,
+      24,
+      24
+    ],
+    "split_C24_I16_L8_N0": [
+      24,
+      16,
+      8
+    ],
+    "split_C32_I16_L8_N8": [
+      32,
+      16,
+      8
+    ],
+    "standard_C32": [
+      32,
+      32,
+      32
+    ]
+  },
+  "models": {
+    "baseline_C16": {
+      "per_seed": [
+        {
+          "probe_C": 0.9801,
+          "probe_D": 0.4366,
+          "probe_C_transfer_D": 0.3099,
+          "head_acc_D": 0.222,
+          "flip_rate": 0.05722636268252418,
+          "overlap_CD": 0.8855472803115845,
+          "fullspin_pC_on_C": 0.9816468253968254,
+          "fullspin_pC_on_D": 0.26339285714285715,
+          "rand_flip_acc": 0.9801587301587301,
+          "groups": {
+            "I": {
+              "n_channels": 16,
+              "probe_C_group": 0.9795,
+              "probe_D_group": 0.4368,
+              "flip_rate_group": 0.05722636268252418,
+              "margin_flipped": 3.539470911026001,
+              "margin_stable": 10.317617416381836,
+              "absfield_D_group": 9.859474182128906,
+              "fieldD_margin_group": 9.859474182128906
+            },
+            "L": {
+              "n_channels": 16,
+              "probe_C_group": 0.9808,
+              "probe_D_group": 0.4391,
+              "flip_rate_group": 0.05722636268252418,
+              "margin_flipped": 3.539470911026001,
+              "margin_stable": 10.317617416381836,
+              "absfield_D_group": 9.859474182128906,
+              "fieldD_margin_group": 9.859474182128906
+            },
+            "N": null
+          }
+        },
+        {
+          "probe_C": 0.9316,
+          "probe_D": 0.4407,
+          "probe_C_transfer_D": 0.3229,
+          "head_acc_D": 0.2463,
+          "flip_rate": 0.04307071746341766,
+          "overlap_CD": 0.9138585925102234,
+          "fullspin_pC_on_C": 0.941468253968254,
+          "fullspin_pC_on_D": 0.25992063492063494,
+          "rand_flip_acc": 0.935515873015873,
+          "groups": {
+            "I": {
+              "n_channels": 16,
+              "probe_C_group": 0.9306,
+              "probe_D_group": 0.4407,
+              "flip_rate_group": 0.04307071746341766,
+              "margin_flipped": 3.3280587196350098,
+              "margin_stable": 10.061473846435547,
+              "absfield_D_group": 9.71607780456543,
+              "fieldD_margin_group": 9.71607780456543
+            },
+            "L": {
+              "n_channels": 16,
+              "probe_C_group": 0.9307,
+              "probe_D_group": 0.4398,
+              "flip_rate_group": 0.04307071746341766,
+              "margin_flipped": 3.3280587196350098,
+              "margin_stable": 10.061473846435547,
+              "absfield_D_group": 9.71607780456543,
+              "fieldD_margin_group": 9.71607780456543
+            },
+            "N": null
+          }
+        },
+        {
+          "probe_C": 0.9755,
+          "probe_D": 0.4418,
+          "probe_C_transfer_D": 0.3226,
+          "head_acc_D": 0.2724,
+          "flip_rate": 0.05213138035365513,
+          "overlap_CD": 0.8957372307777405,
+          "fullspin_pC_on_C": 0.966765873015873,
+          "fullspin_pC_on_D": 0.2534722222222222,
+          "rand_flip_acc": 0.964781746031746,
+          "groups": {
+            "I": {
+              "n_channels": 16,
+              "probe_C_group": 0.9746,
+              "probe_D_group": 0.4435,
+              "flip_rate_group": 0.05213138035365513,
+              "margin_flipped": 3.5479512214660645,
+              "margin_stable": 11.216811180114746,
+              "absfield_D_group": 10.743556022644043,
+              "fieldD_margin_group": 10.743556022644043
+            },
+            "L": {
+              "n_channels": 16,
+              "probe_C_group": 0.9746,
+              "probe_D_group": 0.4417,
+              "flip_rate_group": 0.05213138035365513,
+              "margin_flipped": 3.5479512214660645,
+              "margin_stable": 11.216811180114746,
+              "absfield_D_group": 10.743556022644043,
+              "fieldD_margin_group": 10.743556022644043
+            },
+            "N": null
+          }
+        }
+      ],
+      "mean": {
+        "probe_C": 0.9624,
+        "probe_D": 0.4397,
+        "probe_C_transfer_D": 0.3184666666666667,
+        "head_acc_D": 0.24689999999999998,
+        "flip_rate": 0.05080948683319899,
+        "overlap_CD": 0.8983810345331827,
+        "fullspin_pC_on_C": 0.9632936507936508,
+        "fullspin_pC_on_D": 0.25892857142857145,
+        "rand_flip_acc": 0.9601521164021164
+      },
+      "std": {
+        "probe_C": 0.021859704176101447,
+        "probe_D": 0.0022375581929117987,
+        "probe_C_transfer_D": 0.0060587860903723026,
+        "head_acc_D": 0.020580087463370984,
+        "flip_rate": 0.005854122464945608,
+        "overlap_CD": 0.011708255586698024,
+        "fullspin_pC_on_C": 0.0165855689457346,
+        "fullspin_pC_on_D": 0.004110384555111138,
+        "rand_flip_acc": 0.018517042174711115
+      },
+      "group_agg": {
+        "I": {
+          "probe_C_group": {
+            "mean": 0.9615666666666667,
+            "std": 0.021987925979702814
+          },
+          "probe_D_group": {
+            "mean": 0.4403333333333333,
+            "std": 0.002747524137999309
+          },
+          "flip_rate_group": {
+            "mean": 0.05080948683319899,
+            "std": 0.005854122464945608
+          },
+          "margin_flipped": {
+            "mean": 3.471826950709025,
+            "std": 0.10171842545610425
+          },
+          "margin_stable": {
+            "mean": 10.531967480977377,
+            "std": 0.4954193854990097
+          },
+          "absfield_D_group": {
+            "mean": 10.106369336446127,
+            "std": 0.4543462593481566
+          },
+          "fieldD_margin_group": {
+            "mean": 10.106369336446127,
+            "std": 0.4543462593481566
+          }
+        },
+        "L": {
+          "probe_C_group": {
+            "mean": 0.9620333333333333,
+            "std": 0.022300124563678032
+          },
+          "probe_D_group": {
+            "mean": 0.4402,
+            "std": 0.001098483803552264
+          },
+          "flip_rate_group": {
+            "mean": 0.05080948683319899,
+            "std": 0.005854122464945608
+          },
+          "margin_flipped": {
+            "mean": 3.471826950709025,
+            "std": 0.10171842545610425
+          },
+          "margin_stable": {
+            "mean": 10.531967480977377,
+            "std": 0.4954193854990097
+          },
+          "absfield_D_group": {
+            "mean": 10.106369336446127,
+            "std": 0.4543462593481566
+          },
+          "fieldD_margin_group": {
+            "mean": 10.106369336446127,
+            "std": 0.4543462593481566
+          }
+        },
+        "N": null
+      }
+    },
+    "standard_C24": {
+      "per_seed": [
+        {
+          "probe_C": 0.9618,
+          "probe_D": 0.4622,
+          "probe_C_transfer_D": 0.3736,
+          "head_acc_D": 0.2905,
+          "flip_rate": 0.03363113806991981,
+          "overlap_CD": 0.9327377080917358,
+          "fullspin_pC_on_C": 0.972718253968254,
+          "fullspin_pC_on_D": 0.30753968253968256,
+          "rand_flip_acc": 0.9692460317460317,
+          "groups": {
+            "I": {
+              "n_channels": 24,
+              "probe_C_group": 0.9624,
+              "probe_D_group": 0.4614,
+              "flip_rate_group": 0.03363113806991981,
+              "margin_flipped": 3.1765377521514893,
+              "margin_stable": 11.622880935668945,
+              "absfield_D_group": 11.300528526306152,
+              "fieldD_margin_group": 11.300528526306152
+            },
+            "L": {
+              "n_channels": 24,
+              "probe_C_group": 0.9613,
+              "probe_D_group": 0.4626,
+              "flip_rate_group": 0.03363113806991981,
+              "margin_flipped": 3.1765377521514893,
+              "margin_stable": 11.622880935668945,
+              "absfield_D_group": 11.300528526306152,
+              "fieldD_margin_group": 11.300528526306152
+            },
+            "N": null
+          }
+        },
+        {
+          "probe_C": 0.9471,
+          "probe_D": 0.4697,
+          "probe_C_transfer_D": 0.3725,
+          "head_acc_D": 0.2987,
+          "flip_rate": 0.02960675355618593,
+          "overlap_CD": 0.9407865405082703,
+          "fullspin_pC_on_C": 0.9508928571428571,
+          "fullspin_pC_on_D": 0.31398809523809523,
+          "rand_flip_acc": 0.9513888888888888,
+          "groups": {
+            "I": {
+              "n_channels": 24,
+              "probe_C_group": 0.9471,
+              "probe_D_group": 0.4669,
+              "flip_rate_group": 0.02960675355618593,
+              "margin_flipped": 2.9709312915802,
+              "margin_stable": 12.431385040283203,
+              "absfield_D_group": 12.116192817687988,
+              "fieldD_margin_group": 12.116192817687988
+            },
+            "L": {
+              "n_channels": 24,
+              "probe_C_group": 0.9454,
+              "probe_D_group": 0.4682,
+              "flip_rate_group": 0.02960675355618593,
+              "margin_flipped": 2.9709312915802,
+              "margin_stable": 12.431385040283203,
+              "absfield_D_group": 12.116192817687988,
+              "fieldD_margin_group": 12.116192817687988
+            },
+            "N": null
+          }
+        },
+        {
+          "probe_C": 0.9848,
+          "probe_D": 0.461,
+          "probe_C_transfer_D": 0.3562,
+          "head_acc_D": 0.2454,
+          "flip_rate": 0.042239375846095814,
+          "overlap_CD": 0.9155212044715881,
+          "fullspin_pC_on_C": 0.9885912698412699,
+          "fullspin_pC_on_D": 0.2837301587301587,
+          "rand_flip_acc": 0.9890873015873016,
+          "groups": {
+            "I": {
+              "n_channels": 24,
+              "probe_C_group": 0.9843,
+              "probe_D_group": 0.4602,
+              "flip_rate_group": 0.042239375846095814,
+              "margin_flipped": 3.4543488025665283,
+              "margin_stable": 11.13218879699707,
+              "absfield_D_group": 10.75825023651123,
+              "fieldD_margin_group": 10.75825023651123
+            },
+            "L": {
+              "n_channels": 24,
+              "probe_C_group": 0.9849,
+              "probe_D_group": 0.4609,
+              "flip_rate_group": 0.042239375846095814,
+              "margin_flipped": 3.4543488025665283,
+              "margin_stable": 11.13218879699707,
+              "absfield_D_group": 10.75825023651123,
+              "fieldD_margin_group": 10.75825023651123
+            },
+            "N": null
+          }
+        }
+      ],
+      "mean": {
+        "probe_C": 0.9645666666666667,
+        "probe_D": 0.4643,
+        "probe_C_transfer_D": 0.36743333333333333,
+        "head_acc_D": 0.2782,
+        "flip_rate": 0.03515908915740052,
+        "overlap_CD": 0.9296818176905314,
+        "fullspin_pC_on_C": 0.970734126984127,
+        "fullspin_pC_on_D": 0.3017526455026455,
+        "rand_flip_acc": 0.9699074074074074
+      },
+      "std": {
+        "probe_C": 0.015514795805581471,
+        "probe_D": 0.0038496753109840288,
+        "probe_C_transfer_D": 0.007955850398012483,
+        "head_acc_D": 0.023433451872625737,
+        "flip_rate": 0.005269203758582007,
+        "overlap_CD": 0.010538442353901174,
+        "fullspin_pC_on_C": 0.015454128896227447,
+        "fullspin_pC_on_D": 0.013012891779068128,
+        "rand_flip_acc": 0.01539741630532122
+      },
+      "group_agg": {
+        "I": {
+          "probe_C_group": {
+            "mean": 0.9645999999999999,
+            "std": 0.015266302761310569
+          },
+          "probe_D_group": {
+            "mean": 0.46283333333333326,
+            "std": 0.0029169999809545532
+          },
+          "flip_rate_group": {
+            "mean": 0.03515908915740052,
+            "std": 0.005269203758582007
+          },
+          "margin_flipped": {
+            "mean": 3.2006059487660727,
+            "std": 0.19808681774794748
+          },
+          "margin_stable": {
+            "mean": 11.72881825764974,
+            "std": 0.5356583219326457
+          },
+          "absfield_D_group": {
+            "mean": 11.391657193501791,
+            "std": 0.5581101079726646
+          },
+          "fieldD_margin_group": {
+            "mean": 11.391657193501791,
+            "std": 0.5581101079726646
+          }
+        },
+        "L": {
+          "probe_C_group": {
+            "mean": 0.9638666666666666,
+            "std": 0.016227617063375485
+          },
+          "probe_D_group": {
+            "mean": 0.46390000000000003,
+            "std": 0.0031187604375242928
+          },
+          "flip_rate_group": {
+            "mean": 0.03515908915740052,
+            "std": 0.005269203758582007
+          },
+          "margin_flipped": {
+            "mean": 3.2006059487660727,
+            "std": 0.19808681774794748
+          },
+          "margin_stable": {
+            "mean": 11.72881825764974,
+            "std": 0.5356583219326457
+          },
+          "absfield_D_group": {
+            "mean": 11.391657193501791,
+            "std": 0.5581101079726646
+          },
+          "fieldD_margin_group": {
+            "mean": 11.391657193501791,
+            "std": 0.5581101079726646
+          }
+        },
+        "N": null
+      }
+    },
+    "split_C24_I16_L8_N0": {
+      "per_seed": [
+        {
+          "probe_C": 0.402,
+          "probe_D": 0.4057,
+          "probe_C_transfer_D": 0.4016,
+          "head_acc_D": 0.2972,
+          "flip_rate": 1.0091791708002645e-07,
+          "overlap_CD": 0.9999998211860657,
+          "fullspin_pC_on_C": 0.3482142857142857,
+          "fullspin_pC_on_D": 0.3482142857142857,
+          "rand_flip_acc": 0.3482142857142857,
+          "groups": {
+            "I": {
+              "n_channels": 16,
+              "probe_C_group": 0.4009,
+              "probe_D_group": 0.408,
+              "flip_rate_group": 1.5137687562003967e-07,
+              "margin_flipped": 2.1007466316223145,
+              "margin_stable": 11.307665824890137,
+              "absfield_D_group": 11.307663917541504,
+              "fieldD_margin_group": 11.307663917541504
+            },
+            "L": {
+              "n_channels": 8,
+              "probe_C_group": 0.1,
+              "probe_D_group": 0.1,
+              "flip_rate_group": 0.0,
+              "margin_flipped": 0.0,
+              "margin_stable": 13.050475120544434,
+              "absfield_D_group": 13.050477027893066,
+              "fieldD_margin_group": 13.050477027893066
+            },
+            "N": null
+          }
+        },
+        {
+          "probe_C": 0.414,
+          "probe_D": 0.4107,
+          "probe_C_transfer_D": 0.4127,
+          "head_acc_D": 0.2366,
+          "flip_rate": 1.4128508391203703e-07,
+          "overlap_CD": 0.9999997019767761,
+          "fullspin_pC_on_C": 0.3541666666666667,
+          "fullspin_pC_on_D": 0.3541666666666667,
+          "rand_flip_acc": 0.3541666666666667,
+          "groups": {
+            "I": {
+              "n_channels": 16,
+              "probe_C_group": 0.4124,
+              "probe_D_group": 0.4114,
+              "flip_rate_group": 2.1192762586805554e-07,
+              "margin_flipped": 1.9887055158615112,
+              "margin_stable": 10.349197387695312,
+              "absfield_D_group": 10.34919261932373,
+              "fieldD_margin_group": 10.34919261932373
+            },
+            "L": {
+              "n_channels": 8,
+              "probe_C_group": 0.1,
+              "probe_D_group": 0.1,
+              "flip_rate_group": 0.0,
+              "margin_flipped": 0.0,
+              "margin_stable": 12.754565238952637,
+              "absfield_D_group": 12.754560470581055,
+              "fieldD_margin_group": 12.754560470581055
+            },
+            "N": null
+          }
+        },
+        {
+          "probe_C": 0.4051,
+          "probe_D": 0.409,
+          "probe_C_transfer_D": 0.4064,
+          "head_acc_D": 0.3024,
+          "flip_rate": 1.4128508391203703e-07,
+          "overlap_CD": 0.9999997019767761,
+          "fullspin_pC_on_C": 0.3551587301587302,
+          "fullspin_pC_on_D": 0.3551587301587302,
+          "rand_flip_acc": 0.3551587301587302,
+          "groups": {
+            "I": {
+              "n_channels": 16,
+              "probe_C_group": 0.4047,
+              "probe_D_group": 0.4105,
+              "flip_rate_group": 2.1192762586805554e-07,
+              "margin_flipped": 2.0239503383636475,
+              "margin_stable": 10.747045516967773,
+              "absfield_D_group": 10.747042655944824,
+              "fieldD_margin_group": 10.747042655944824
+            },
+            "L": {
+              "n_channels": 8,
+              "probe_C_group": 0.1,
+              "probe_D_group": 0.1,
+              "flip_rate_group": 0.0,
+              "margin_flipped": 0.0,
+              "margin_stable": 9.899606704711914,
+              "absfield_D_group": 9.899605751037598,
+              "fieldD_margin_group": 9.899605751037598
+            },
+            "N": null
+          }
+        }
+      ],
+      "mean": {
+        "probe_C": 0.40703333333333336,
+        "probe_D": 0.4084666666666667,
+        "probe_C_transfer_D": 0.4069,
+        "head_acc_D": 0.27873333333333333,
+        "flip_rate": 1.2782936163470017e-07,
+        "overlap_CD": 0.9999997417132059,
+        "fullspin_pC_on_C": 0.3525132275132275,
+        "fullspin_pC_on_D": 0.3525132275132275,
+        "rand_flip_acc": 0.3525132275132275
+      },
+      "std": {
+        "probe_C": 0.005086146762421302,
+        "probe_D": 0.0020757863302587006,
+        "probe_C_transfer_D": 0.004545327270945405,
+        "head_acc_D": 0.029868303526574047,
+        "flip_rate": 1.9029264936135575e-08,
+        "overlap_CD": 5.6195798014525375e-08,
+        "fullspin_pC_on_C": 0.0030666727829020335,
+        "fullspin_pC_on_D": 0.0030666727829020335,
+        "rand_flip_acc": 0.0030666727829020335
+      },
+      "group_agg": {
+        "I": {
+          "probe_C_group": {
+            "mean": 0.40599999999999997,
+            "std": 0.0047840011148270745
+          },
+          "probe_D_group": {
+            "mean": 0.4099666666666666,
+            "std": 0.0014383632673594328
+          },
+          "flip_rate_group": {
+            "mean": 1.9174404245205025e-07,
+            "std": 2.8543897404203362e-08
+          },
+          "margin_flipped": {
+            "mean": 2.0378008286158242,
+            "std": 0.046777344697340136
+          },
+          "margin_stable": {
+            "mean": 10.801302909851074,
+            "std": 0.39316945861934377
+          },
+          "absfield_D_group": {
+            "mean": 10.801299730936686,
+            "std": 0.393170599118517
+          },
+          "fieldD_margin_group": {
+            "mean": 10.801299730936686,
+            "std": 0.393170599118517
+          }
+        },
+        "L": {
+          "probe_C_group": {
+            "mean": 0.10000000000000002,
+            "std": 1.3877787807814457e-17
+          },
+          "probe_D_group": {
+            "mean": 0.10000000000000002,
+            "std": 1.3877787807814457e-17
+          },
+          "flip_rate_group": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "margin_flipped": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "margin_stable": {
+            "mean": 11.901549021402994,
+            "std": 1.4207323097672215
+          },
+          "absfield_D_group": {
+            "mean": 11.90154774983724,
+            "std": 1.4207323175370457
+          },
+          "fieldD_margin_group": {
+            "mean": 11.90154774983724,
+            "std": 1.4207323175370457
+          }
+        },
+        "N": null
+      }
+    },
+    "split_C32_I16_L8_N8": {
+      "per_seed": [
+        {
+          "probe_C": 0.4476,
+          "probe_D": 0.4486,
+          "probe_C_transfer_D": 0.4456,
+          "head_acc_D": 0.3916,
+          "flip_rate": 0.0004077790275452629,
+          "overlap_CD": 0.9991844296455383,
+          "fullspin_pC_on_C": 0.3998015873015873,
+          "fullspin_pC_on_D": 0.4007936507936508,
+          "rand_flip_acc": 0.3993055555555556,
+          "groups": {
+            "I": {
+              "n_channels": 16,
+              "probe_C_group": 0.4524,
+              "probe_D_group": 0.4534,
+              "flip_rate_group": 0.0008155580550905258,
+              "margin_flipped": 2.1433920860290527,
+              "margin_stable": 13.152580261230469,
+              "absfield_D_group": 13.141603469848633,
+              "fieldD_margin_group": 13.141603469848633
+            },
+            "L": {
+              "n_channels": 8,
+              "probe_C_group": 0.1,
+              "probe_D_group": 0.1,
+              "flip_rate_group": 0.0,
+              "margin_flipped": 0.0,
+              "margin_stable": 17.56179428100586,
+              "absfield_D_group": 17.558349609375,
+              "fieldD_margin_group": 17.558349609375
+            },
+            "N": {
+              "n_channels": 8,
+              "probe_C_group": 0.1,
+              "probe_D_group": 0.1,
+              "flip_rate_group": 0.0,
+              "margin_flipped": 0.0,
+              "margin_stable": 17.23833465576172,
+              "absfield_D_group": 17.23487091064453,
+              "fieldD_margin_group": 17.23487091064453
+            }
+          }
+        },
+        {
+          "probe_C": 0.4192,
+          "probe_D": 0.4151,
+          "probe_C_transfer_D": 0.4194,
+          "head_acc_D": 0.3374,
+          "flip_rate": 2.1192762586805554e-07,
+          "overlap_CD": 0.9999995827674866,
+          "fullspin_pC_on_C": 0.36755952380952384,
+          "fullspin_pC_on_D": 0.36755952380952384,
+          "rand_flip_acc": 0.36755952380952384,
+          "groups": {
+            "I": {
+              "n_channels": 16,
+              "probe_C_group": 0.4195,
+              "probe_D_group": 0.4201,
+              "flip_rate_group": 4.238552517361111e-07,
+              "margin_flipped": 2.0805788040161133,
+              "margin_stable": 15.58729076385498,
+              "absfield_D_group": 15.5872802734375,
+              "fieldD_margin_group": 15.5872802734375
+            },
+            "L": {
+              "n_channels": 8,
+              "probe_C_group": 0.1,
+              "probe_D_group": 0.1,
+              "flip_rate_group": 0.0,
+              "margin_flipped": 0.0,
+              "margin_stable": 10.772358894348145,
+              "absfield_D_group": 10.772361755371094,
+              "fieldD_margin_group": 10.772361755371094
+            },
+            "N": {
+              "n_channels": 8,
+              "probe_C_group": 0.1,
+              "probe_D_group": 0.1,
+              "flip_rate_group": 0.0,
+              "margin_flipped": 0.0,
+              "margin_stable": 18.48741912841797,
+              "absfield_D_group": 18.4874267578125,
+              "fieldD_margin_group": 18.4874267578125
+            }
+          }
+        },
+        {
+          "probe_C": 0.4237,
+          "probe_D": 0.4167,
+          "probe_C_transfer_D": 0.4203,
+          "head_acc_D": 0.3845,
+          "flip_rate": 3.0275375124007935e-08,
+          "overlap_CD": 0.9999999403953552,
+          "fullspin_pC_on_C": 0.376984126984127,
+          "fullspin_pC_on_D": 0.376984126984127,
+          "rand_flip_acc": 0.376984126984127,
+          "groups": {
+            "I": {
+              "n_channels": 16,
+              "probe_C_group": 0.4251,
+              "probe_D_group": 0.4169,
+              "flip_rate_group": 6.055075024801587e-08,
+              "margin_flipped": 2.254002094268799,
+              "margin_stable": 16.28440284729004,
+              "absfield_D_group": 16.284400939941406,
+              "fieldD_margin_group": 16.284400939941406
+            },
+            "L": {
+              "n_channels": 8,
+              "probe_C_group": 0.1,
+              "probe_D_group": 0.1,
+              "flip_rate_group": 0.0,
+              "margin_flipped": 0.0,
+              "margin_stable": 15.561382293701172,
+              "absfield_D_group": 15.561381340026855,
+              "fieldD_margin_group": 15.561381340026855
+            },
+            "N": {
+              "n_channels": 8,
+              "probe_C_group": 0.1,
+              "probe_D_group": 0.1,
+              "flip_rate_group": 0.0,
+              "margin_flipped": 0.0,
+              "margin_stable": 13.271201133728027,
+              "absfield_D_group": 13.271201133728027,
+              "fieldD_margin_group": 13.271201133728027
+            }
+          }
+        }
+      ],
+      "mean": {
+        "probe_C": 0.43016666666666664,
+        "probe_D": 0.4268,
+        "probe_C_transfer_D": 0.4284333333333333,
+        "head_acc_D": 0.37116666666666664,
+        "flip_rate": 0.00013600707684875165,
+        "overlap_CD": 0.9997279842694601,
+        "fullspin_pC_on_C": 0.38144841269841273,
+        "fullspin_pC_on_D": 0.3817791005291005,
+        "rand_flip_acc": 0.38128306878306883
+      },
+      "std": {
+        "probe_C": 0.01246336854769028,
+        "probe_D": 0.015428761021762777,
+        "probe_C_transfer_D": 0.012144225879907792,
+        "head_acc_D": 0.024051934549128396,
+        "flip_rate": 0.00019217180358284484,
+        "overlap_CD": 0.00038435118825056217,
+        "fullspin_pC_on_C": 0.013536002604428558,
+        "fullspin_pC_on_D": 0.013985006913882606,
+        "rand_flip_acc": 0.013311982280337533
+      },
+      "group_agg": {
+        "I": {
+          "probe_C_group": {
+            "mean": 0.4323333333333333,
+            "std": 0.01437227268813888
+          },
+          "probe_D_group": {
+            "mean": 0.4301333333333333,
+            "std": 0.01650380427524382
+          },
+          "flip_rate_group": {
+            "mean": 0.0002720141536975033,
+            "std": 0.0003843436071656897
+          },
+          "margin_flipped": {
+            "mean": 2.159324328104655,
+            "std": 0.07169047660456022
+          },
+          "margin_stable": {
+            "mean": 15.00809129079183,
+            "std": 1.342555324703775
+          },
+          "absfield_D_group": {
+            "mean": 15.004428227742514,
+            "std": 1.3476105681003216
+          },
+          "fieldD_margin_group": {
+            "mean": 15.004428227742514,
+            "std": 1.3476105681003216
+          }
+        },
+        "L": {
+          "probe_C_group": {
+            "mean": 0.10000000000000002,
+            "std": 1.3877787807814457e-17
+          },
+          "probe_D_group": {
+            "mean": 0.10000000000000002,
+            "std": 1.3877787807814457e-17
+          },
+          "flip_rate_group": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "margin_flipped": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "margin_stable": {
+            "mean": 14.631845156351725,
+            "std": 2.848641510695212
+          },
+          "absfield_D_group": {
+            "mean": 14.63069756825765,
+            "std": 2.8474593354951887
+          },
+          "fieldD_margin_group": {
+            "mean": 14.63069756825765,
+            "std": 2.8474593354951887
+          }
+        },
+        "N": {
+          "probe_C_group": {
+            "mean": 0.10000000000000002,
+            "std": 1.3877787807814457e-17
+          },
+          "probe_D_group": {
+            "mean": 0.10000000000000002,
+            "std": 1.3877787807814457e-17
+          },
+          "flip_rate_group": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "margin_flipped": {
+            "mean": 0.0,
+            "std": 0.0
+          },
+          "margin_stable": {
+            "mean": 16.33231830596924,
+            "std": 2.223792820326009
+          },
+          "absfield_D_group": {
+            "mean": 16.33116626739502,
+            "std": 2.2233254375689744
+          },
+          "fieldD_margin_group": {
+            "mean": 16.33116626739502,
+            "std": 2.2233254375689744
+          }
+        }
+      }
+    },
+    "standard_C32": {
+      "per_seed": [
+        {
+          "probe_C": 0.9698,
+          "probe_D": 0.4739,
+          "probe_C_transfer_D": 0.3713,
+          "head_acc_D": 0.287,
+          "flip_rate": 0.03141521272205171,
+          "overlap_CD": 0.9371695518493652,
+          "fullspin_pC_on_C": 0.9677579365079365,
+          "fullspin_pC_on_D": 0.3169642857142857,
+          "rand_flip_acc": 0.966765873015873,
+          "groups": {
+            "I": {
+              "n_channels": 32,
+              "probe_C_group": 0.9696,
+              "probe_D_group": 0.4744,
+              "flip_rate_group": 0.03141521272205171,
+              "margin_flipped": 3.349130630493164,
+              "margin_stable": 12.50445556640625,
+              "absfield_D_group": 12.171671867370605,
+              "fieldD_margin_group": 12.171671867370605
+            },
+            "L": {
+              "n_channels": 32,
+              "probe_C_group": 0.9699,
+              "probe_D_group": 0.4727,
+              "flip_rate_group": 0.03141521272205171,
+              "margin_flipped": 3.349130630493164,
+              "margin_stable": 12.50445556640625,
+              "absfield_D_group": 12.171671867370605,
+              "fieldD_margin_group": 12.171671867370605
+            },
+            "N": null
+          }
+        },
+        {
+          "probe_C": 0.9872,
+          "probe_D": 0.4745,
+          "probe_C_transfer_D": 0.349,
+          "head_acc_D": 0.2563,
+          "flip_rate": 0.04070018586658296,
+          "overlap_CD": 0.9185996055603027,
+          "fullspin_pC_on_C": 0.9851190476190477,
+          "fullspin_pC_on_D": 0.2663690476190476,
+          "rand_flip_acc": 0.9826388888888888,
+          "groups": {
+            "I": {
+              "n_channels": 32,
+              "probe_C_group": 0.9873,
+              "probe_D_group": 0.4752,
+              "flip_rate_group": 0.04070018586658296,
+              "margin_flipped": 3.653416156768799,
+              "margin_stable": 12.517780303955078,
+              "absfield_D_group": 12.097626686096191,
+              "fieldD_margin_group": 12.097626686096191
+            },
+            "L": {
+              "n_channels": 32,
+              "probe_C_group": 0.9872,
+              "probe_D_group": 0.4738,
+              "flip_rate_group": 0.04070018586658296,
+              "margin_flipped": 3.653416156768799,
+              "margin_stable": 12.517780303955078,
+              "absfield_D_group": 12.097626686096191,
+              "fieldD_margin_group": 12.097626686096191
+            },
+            "N": null
+          }
+        },
+        {
+          "probe_C": 0.9592,
+          "probe_D": 0.4715,
+          "probe_C_transfer_D": 0.3784,
+          "head_acc_D": 0.3081,
+          "flip_rate": 0.024998377239893354,
+          "overlap_CD": 0.9500032663345337,
+          "fullspin_pC_on_C": 0.9449404761904762,
+          "fullspin_pC_on_D": 0.32688492063492064,
+          "rand_flip_acc": 0.9429563492063492,
+          "groups": {
+            "I": {
+              "n_channels": 32,
+              "probe_C_group": 0.9607,
+              "probe_D_group": 0.4721,
+              "flip_rate_group": 0.024998377239893354,
+              "margin_flipped": 2.9963507652282715,
+              "margin_stable": 13.024700164794922,
+              "absfield_D_group": 12.743576049804688,
+              "fieldD_margin_group": 12.743576049804688
+            },
+            "L": {
+              "n_channels": 32,
+              "probe_C_group": 0.9601,
+              "probe_D_group": 0.4737,
+              "flip_rate_group": 0.024998377239893354,
+              "margin_flipped": 2.9963507652282715,
+              "margin_stable": 13.024700164794922,
+              "absfield_D_group": 12.743576049804688,
+              "fieldD_margin_group": 12.743576049804688
+            },
+            "N": null
+          }
+        }
+      ],
+      "mean": {
+        "probe_C": 0.9720666666666666,
+        "probe_D": 0.4733,
+        "probe_C_transfer_D": 0.36623333333333336,
+        "head_acc_D": 0.2838,
+        "flip_rate": 0.03237125860950934,
+        "overlap_CD": 0.9352574745814005,
+        "fullspin_pC_on_C": 0.9659391534391535,
+        "fullspin_pC_on_D": 0.30340608465608465,
+        "rand_flip_acc": 0.9641203703703703
+      },
+      "std": {
+        "probe_C": 0.011542770705318318,
+        "probe_D": 0.001296148139681575,
+        "probe_C_transfer_D": 0.012525795605691321,
+        "head_acc_D": 0.021267972791657104,
+        "flip_rate": 0.006445784997008484,
+        "overlap_CD": 0.01289158658750591,
+        "fullspin_pC_on_C": 0.01645317354187685,
+        "fullspin_pC_on_D": 0.026500457023345466,
+        "rand_flip_acc": 0.01630797355282797
+      },
+      "group_agg": {
+        "I": {
+          "probe_C_group": {
+            "mean": 0.9725333333333334,
+            "std": 0.011055717475084484
+          },
+          "probe_D_group": {
+            "mean": 0.4739,
+            "std": 0.0013140268896284614
+          },
+          "flip_rate_group": {
+            "mean": 0.03237125860950934,
+            "std": 0.006445784997008484
+          },
+          "margin_flipped": {
+            "mean": 3.332965850830078,
+            "std": 0.26848923909689404
+          },
+          "margin_stable": {
+            "mean": 12.68231201171875,
+            "std": 0.24216608995049982
+          },
+          "absfield_D_group": {
+            "mean": 12.337624867757162,
+            "std": 0.2886381169929201
+          },
+          "fieldD_margin_group": {
+            "mean": 12.337624867757162,
+            "std": 0.2886381169929201
+          }
+        },
+        "L": {
+          "probe_C_group": {
+            "mean": 0.9724,
+            "std": 0.011203868379567244
+          },
+          "probe_D_group": {
+            "mean": 0.4734,
+            "std": 0.0004966554808583755
+          },
+          "flip_rate_group": {
+            "mean": 0.03237125860950934,
+            "std": 0.006445784997008484
+          },
+          "margin_flipped": {
+            "mean": 3.332965850830078,
+            "std": 0.26848923909689404
+          },
+          "margin_stable": {
+            "mean": 12.68231201171875,
+            "std": 0.24216608995049982
+          },
+          "absfield_D_group": {
+            "mean": 12.337624867757162,
+            "std": 0.2886381169929201
+          },
+          "fieldD_margin_group": {
+            "mean": 12.337624867757162,
+            "std": 0.2886381169929201
+          }
+        },
+        "N": null
+      }
+    }
+  }
+}

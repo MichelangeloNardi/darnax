@@ -43,7 +43,6 @@ import jax
 jax.config.update("jax_default_matmul_precision", "high")
 
 import equinox as eqx
-import jax.numpy as jnp
 import numpy as np
 
 HERE = Path(__file__).resolve().parent

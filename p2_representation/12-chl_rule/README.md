@@ -41,6 +41,22 @@ clamped-only rule at the same config?
 
 Run from repo root with `XLA_PYTHON_CLIENT_PREALLOCATE=false`.
 
-## Results
+## Results (3 seeds × 20 epochs, functional test at the baseline-tuned config)
 
-_Pending cluster run (functional test, 3 seeds × 20 epochs)._
+| rule | best probe_D (mean) | final probe_D (mean) | head_D (mean) |
+|---|---|---|---|
+| CHL (contrastive) | 0.289 | 0.225 ± 0.023 | 0.107 |
+| DynamicalTrainer (baseline) | 0.449 | 0.442 ± 0.003 | 0.252 |
+
+Per seed (CHL best / final ; baseline final): seed 0 0.393 / 0.241 ; 0.440. seed 42 0.258 /
+0.242 ; 0.446. seed 123 0.217 / 0.193 ; 0.440.
+
+**Factual observations (numbers only):**
+- At the baseline config, CHL's probe_D **peaks then decays** (best 0.289 mean vs final 0.225
+  mean); the peak height is seed-dependent (0.393 / 0.258 / 0.217). The DynamicalTrainer
+  baseline is stable (final 0.442 ± 0.003).
+- This config is `best_channel_entropy_cfg`, tuned for the DynamicalTrainer (not for CHL). A
+  CHL-specific HP tuning (its lr / phase lengths) is the follow-up (exp 13) before any fair
+  CHL-vs-baseline comparison.
+
+Figure: `figures/curves.png` (regenerate from the JSON via `plot.py`).

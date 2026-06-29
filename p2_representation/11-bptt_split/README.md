@@ -51,6 +51,32 @@ Reports the same global metrics + per-group probes (`both` / `input_only` / `lab
 Run from repo root with `XLA_PYTHON_CLIENT_PREALLOCATE=false`; `--smoke` on each for a tiny
 CPU run. (Part-2 references require exp-10's `../10-split_scale/models/` to be present.)
 
-## Results
+## Results (3 seeds, best_channel_entropy; means)
 
-_Pending cluster run._
+| model | probe_D | head_D | C→D transfer | flip | overlap | per-group probe_D |
+|---|---|---|---|---|---|---|
+| split_C24__bptt (part 1) | 0.483 | 0.401 | 0.267 | 0.249 | 0.502 | I 0.466 · L 0.427 |
+| split_C32__bptt (part 1) | 0.499 | 0.378 | 0.320 | 0.213 | 0.574 | I 0.464 · L 0.426 · N 0.414 |
+| partial_C24 (part 2, local) | 0.430 | 0.282 | 0.329 | 0.014 | 0.972 | both 0.402 · input_only 0.354 · label_only 0.100 |
+| standard_C24 (local ref) | 0.463 | 0.278 | 0.362 | 0.035 | 0.930 | I 0.460 · L 0.463 |
+| split_C24 (local ref) | 0.409 | 0.279 | 0.412 | 0.000 | 1.000 | I 0.408 · L 0.100 |
+
+Per-group probe_C (decode at C), for reference: split_C24__bptt I 0.515 / L 0.454;
+split_C32__bptt I 0.482 / L 0.437 / N 0.412; partial_C24 both 0.757 / input_only 0.354 /
+label_only 0.100; standard_C24 I 0.965 / L 0.964; split_C24 (local) I 0.413 / L 0.100.
+BPTT best-sep (checkpoint proxy): split_C24 0.38/0.41/0.42, split_C32 0.38/0.40/0.39.
+
+**Factual observations (numbers only):**
+- Part 1, BPTT split: probe_D split_C24__bptt 0.483, split_C32__bptt 0.499. Per-group
+  probe_D — group I 0.464–0.466; group L 0.426–0.427; group N (split_C32) 0.414. (Under the
+  local rule, the strict-split groups L and N probe 0.100 at D.) flip 0.21–0.25, overlap
+  0.50–0.57.
+- Part 2, partial_C24 (local): probe_D 0.430; per-group probe_D both 0.402, input_only 0.354,
+  label_only 0.100. flip 0.014, overlap 0.972. group probe_C: both 0.757, input_only 0.354,
+  label_only 0.100.
+- References (local): standard_C24 probe_D 0.463 (groups I/L 0.46), split_C24 probe_D 0.409
+  (group I 0.408, group L 0.100, overlap 1.000).
+- head_acc_D: split_C24__bptt 0.401, split_C32__bptt 0.378, partial_C24 0.282, standard_C24
+  0.278, split_C24 (local) 0.279.
+
+Figure: `figures/global.png` (regenerate from the JSON via `plot.py`).

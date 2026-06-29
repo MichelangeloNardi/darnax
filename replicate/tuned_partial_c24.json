@@ -1,0 +1,30 @@
+{
+  "lr_j": 0.0007474245667651623,
+  "lr_win": 0.006600812817069552,
+  "lr_wout": 0.04321887433959399,
+  "kernel_decay_rate": 0.0007847404026606365,
+  "threshold_j": 1.8525538860042268,
+  "threshold_win": 0.8510825401105292,
+  "j_d": 0.7513074399630527,
+  "entropy_beta": 0.48525185892206546,
+  "momentum": 0.3162081708642795,
+  "clamped_n_iter": 5,
+  "free_n_iter": 4,
+  "strength_back": 1.4711531428803912,
+  "wback_type": "channel",
+  "j1_window_hebb": false,
+  "j1_entropy": true,
+  "trial_number": 14,
+  "probe_acc": 0.45010000467300415,
+  "c05_j1": 0.8913841247558594,
+  "_tuned_target": "partial_c24",
+  "_tuned_probe_D": 0.4418,
+  "_tuned_params": {
+    "lr_j": 0.0007474245667651623,
+    "lr_win": 0.006600812817069552,
+    "j_d": 0.7513074399630527,
+    "threshold_j": 1.8525538860042268,
+    "free_n_iter": 4,
+    "entropy_beta": 0.48525185892206546
+  }
+}

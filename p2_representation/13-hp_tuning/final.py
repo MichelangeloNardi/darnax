@@ -68,6 +68,7 @@ def main():
     ap.add_argument("--train-batches", type=int, default=400)
     ap.add_argument("--test-batches", type=int, default=None)
     ap.add_argument("--max-batches", type=int, default=None)
+    ap.add_argument("--out", type=str, default=None, help="output filename (for per-machine parallel runs)")
     args = ap.parse_args()
     if args.smoke:
         args.seeds = [0]; args.epochs = 1; args.probe_epochs = 2
@@ -100,7 +101,8 @@ def main():
               + f"  ({cm.fmt(time.time()-t0)})")
 
     out_dir = HERE / "results"; out_dir.mkdir(exist_ok=True)
-    out_path = out_dir / ("final_smoke.json" if args.smoke else "final.json")
+    out_name = args.out or ("final_smoke.json" if args.smoke else "final.json")
+    out_path = out_dir / out_name
     out_path.write_text(json.dumps(results, indent=2))
     print(f"\nSaved {out_path}  (total {cm.fmt(time.time()-t0)})")
 

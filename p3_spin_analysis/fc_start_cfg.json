@@ -1,0 +1,18 @@
+{
+  "lr_j": 0.001,
+  "lr_win": 0.02,
+  "lr_wout": 0.04,
+  "threshold_j": 2.0,
+  "threshold_win": 0.85,
+  "threshold_wout": 5.0,
+  "j_d": 0.9,
+  "momentum": 0.3,
+  "clamped_n_iter": 5,
+  "free_n_iter": 6,
+  "warmup_n_iter": 1,
+  "strength_back": 1.5,
+  "strength_win": 1.0,
+  "sparsity": 0.9,
+  "n_spins": 256,
+  "train_win": false
+}

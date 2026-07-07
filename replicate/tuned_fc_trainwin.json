@@ -1,0 +1,30 @@
+{
+  "lr_j": 0.0010283689566405086,
+  "lr_win": 0.01796535865840043,
+  "lr_wout": 0.04,
+  "threshold_j": 2.840406842320026,
+  "threshold_win": 1.0414753057016655,
+  "threshold_wout": 5.0,
+  "j_d": 0.8736848372660462,
+  "momentum": 0.3,
+  "clamped_n_iter": 5,
+  "free_n_iter": 12,
+  "warmup_n_iter": 1,
+  "strength_back": 2.371848870343495,
+  "strength_win": 1.0,
+  "sparsity": 0.9,
+  "n_spins": 256,
+  "train_win": true,
+  "_tuned_variant": "trainwin",
+  "_tuned_probe_D": 0.38099998235702515,
+  "_tuned_params": {
+    "lr_j": 0.0010283689566405086,
+    "lr_win": 0.01796535865840043,
+    "j_d": 0.8736848372660462,
+    "threshold_j": 2.840406842320026,
+    "threshold_win": 1.0414753057016655,
+    "strength_back": 2.371848870343495,
+    "free_n_iter": 12,
+    "clamped_n_iter": 5
+  }
+}

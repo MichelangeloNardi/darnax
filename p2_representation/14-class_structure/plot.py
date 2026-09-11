@@ -78,7 +78,7 @@ def panel_per_class(ax, res, classes):
     ax.set_ylim(0, top * 1.36)
     ax.set_title("(a) Per-class accuracy")
     ax.grid(axis="y", alpha=0.7); ax.set_axisbelow(True)
-    ax.legend(frameon=False, fontsize=8.5, loc="upper left")
+    ax.legend(frameon=False, fontsize=8.5, loc="upper right")
 
 
 def panel_confusion(ax, res, classes, fig):
@@ -152,17 +152,18 @@ def panel_scan(ax, res, named):
         for r, i in enumerate(top):
             ax.annotate("+".join(res["classes"][c] for c in keys[i]),
                         (ctrl[i], D[i]), textcoords="offset points",
-                        xytext=(8, -3 - 9 * (r % 2)), fontsize=7, color=INK)
+                        xytext=(9, 7 - 13 * (r % 3)), fontsize=7, color=INK)
 
     idx = {k: i for i, k in enumerate(keys)}
-    for nm, cls in named.items():
+    for j, (nm, cls) in enumerate(named.items()):
         k = tuple(sorted(cls))
         if k in idx:
             i = idx[k]
             ax.scatter([ctrl[i]], [D[i]], s=58, color=ORANGE, zorder=4,
                        edgecolor="white", linewidths=1.1,
                        label="named grouping" if nm == list(named)[0] else None)
-            ax.annotate(nm, (ctrl[i], D[i]), textcoords="offset points", xytext=(8, 6),
+            ax.annotate(nm, (ctrl[i], D[i]), textcoords="offset points",
+                        xytext=(9, 9 + 11 * (j % 2)),
                         fontsize=7.5, color=INK, fontweight="semibold")
 
     ax.set_xlim(lo, hi); ax.set_ylim(lo, hi)
@@ -182,7 +183,11 @@ def main():
     path = HERE / args.results if not Path(args.results).is_absolute() else Path(args.results)
     res = json.loads(Path(path).read_text())
     classes = res["classes"]
-    named = {k: set(v) for k, v in res["groupings"].items() if len(v) > 1}
+    # panel (d) scores every dichotomy on all 10 classes, so groupings that were
+    # scored on a restricted subset are not comparable on those axes
+    d0 = res["seeds"][list(res["seeds"])[0]]["D"]["named"]
+    named = {k: set(v) for k, v in res["groupings"].items()
+             if len(v) > 1 and "restricted_to" not in d0.get(k, {})}
 
     style()
     fig, axes = plt.subplots(2, 2, figsize=(14.5, 12.5))

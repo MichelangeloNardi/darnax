@@ -63,7 +63,7 @@ Console output and panel (d) report `lift = balanced(D) − max(balanced(randD),
 ## Files
 
 - `run.py` — trains, collects C / D / random-init reps, runs every analysis, writes
-  `results/class_structure.json`. Reps cached in `reps/seed<N>.npz` (gitignored);
+  `results/class_structure.json`. Reps cached in `reps/seed<N>_ep<E>.npz` (gitignored);
   `--reuse-reps` skips training and re-runs the analysis only.
 - `plot.py` — `figures/class_structure.png`, four panels: (a) per-class accuracy,
   (b) confusion reordered vehicles-first, (c) centroid cosine similarity,
@@ -79,6 +79,60 @@ python p2_representation/14-class_structure/plot.py
 Smoke: `python p2_representation/14-class_structure/run.py --smoke` (1 epoch, 6 batches,
 1 seed — trains essentially nothing; checks the pipeline only).
 
-## Results
+## Results (3 seeds x 20 epochs, w02, 11m45s)
 
-Pending — not yet run at the full budget.
+**10-way, same closed-form ridge readout on every representation**
+
+| representation | 10-way acc |
+|---|---|
+| C (clamped) | 0.9306 ± 0.0290 |
+| D | 0.4508 ± 0.0063 |
+| randD (untrained W_in/J1) | 0.4245 ± 0.0077 |
+| pixels (3072-d) | 0.3718 |
+
+Adam probe on D 0.4570 ± 0.0057; W_out head on D 0.2421 ± 0.0270.
+
+**Error decomposition (10-way probe on D).** Errors landing inside the true class's
+vehicle/animal group: 0.704 / 0.704 / 0.709 per seed. Rate expected under uniform
+confusion: 0.481 / 0.480 / 0.481.
+
+**Named dichotomies — balanced accuracy, mean ± std over seeds**
+
+| grouping | D | C | randD | pixels | lift (D − best control) |
+|---|---|---|---|---|---|
+| `vehicle_vs_animal` | 0.8203 ± 0.0005 | 0.9568 | 0.8199 | 0.7932 | +0.0004 ± 0.0100 |
+| `road_vs_skywater` (vehicles only) | 0.8103 ± 0.0059 | 0.9930 | 0.8048 | 0.7650 | +0.0055 ± 0.0107 |
+| `mammal_vs_other_animal` (animals only) | 0.6445 ± 0.0069 | 0.8901 | 0.6205 | 0.6004 | +0.0240 ± 0.0111 |
+| `flies_vs_not` | 0.5725 ± 0.0063 | 0.8599 | 0.5449 | 0.5465 | +0.0256 ± 0.0058 |
+
+**4-way (centroid-suggested).** D 0.6419 ± 0.0038, randD 0.6289 ± 0.0057, pixels 0.5937.
+Per-group on D: mammal 0.813, road_vehicle 0.668, sky_water_vehicle 0.652,
+non_mammal_animal 0.264.
+
+**511-partition scan, ranked by mean lift over the best control**
+
+| dichotomy | lift |
+|---|---|
+| ship | +0.0473 ± 0.0027 |
+| auto+ship | +0.0439 ± 0.0044 |
+| airplane+auto | +0.0411 ± 0.0084 |
+| airplane+auto+bird | +0.0351 ± 0.0103 |
+| airplane+cat+frog | +0.0329 ± 0.0066 |
+| … | |
+| horse+truck | −0.0177 ± 0.0070 |
+| auto+horse | −0.0217 ± 0.0063 |
+| horse | −0.0228 ± 0.0051 |
+
+Over all 511: mean lift +0.0127, median +0.0124, max +0.0473; 64.6 % have lift > 0.01.
+`vehicle_vs_animal` ranks near the bottom of that distribution at +0.0004.
+
+**Average-linkage cuts on the D class centroids (seed 0)**
+
+| k | groups | one-vs-all acc |
+|---|---|---|
+| 2 | {airplane, ship} · {auto, bird, cat, deer, dog, frog, horse, truck} | 0.8772 |
+| 3 | {airplane, ship} · {auto, truck} · {6 animals} | 0.7871 |
+| 4 | {airplane, ship} · {auto} · {6 animals} · {truck} | 0.7521 |
+| 5 | {airplane} · {auto} · {6 animals} · {ship} · {truck} | 0.7321 |
+
+Figure: `figures/class_structure.png`. Raw JSON: `results/class_structure.json`.

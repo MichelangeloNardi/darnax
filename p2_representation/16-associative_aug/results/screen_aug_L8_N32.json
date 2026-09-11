@@ -1,0 +1,15 @@
+{
+  "name": "aug_L8_N32",
+  "C": 56,
+  "seeds": [
+    0
+  ],
+  "probe_D_mean": 0.4862,
+  "probe_D_std": 0.0,
+  "probe_D_seeds": [
+    0.4862
+  ],
+  "best_sep_seeds": [
+    0.36181640625
+  ]
+}

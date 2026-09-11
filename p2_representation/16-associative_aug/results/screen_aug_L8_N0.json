@@ -1,0 +1,15 @@
+{
+  "name": "aug_L8_N0",
+  "C": 24,
+  "seeds": [
+    0
+  ],
+  "probe_D_mean": 0.4717,
+  "probe_D_std": 0.0,
+  "probe_D_seeds": [
+    0.4717
+  ],
+  "best_sep_seeds": [
+    0.38916015625
+  ]
+}

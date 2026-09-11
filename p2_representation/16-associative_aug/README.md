@@ -47,6 +47,25 @@ BPTT is an upper-bound screen, not a guarantee for the local rule.
 Run one (cluster): `XLA_PYTHON_CLIENT_PREALLOCATE=false \
   ~/miniforge3/envs/darnax_hpc/bin/python p2_representation/16-associative_aug/bptt_screen.py --name aug_L8_N16`
 
-## Results
+## Results — step 1 BPTT ceiling screen (1 seed)
 
-_Pending BPTT screen._
+| config | C | I / L / N | trainable params | BPTT ceiling probe_D |
+|---|---|---|---|---|
+| classic_c16 | 16 | 16 / 16 / 0 | 10144 | 0.482 |
+| aug_L8_N0 | 24 | 16 / 8 / 0 | 19416 | 0.472 |
+| aug_L8_N8 | 32 | 16 / 8 / 8 | 31888 | 0.495 |
+| aug_L8_N16 | 40 | 16 / 8 / 16 | 47560 | 0.491 |
+| aug_L8_N32 | 56 | 16 / 8 / 32 | 88504 | 0.486 |
+
+**Factual observations (numbers only):**
+- BPTT ceiling as N (recurrent-only) grows at fixed I=16, L=8: N0 0.472, N8 0.495, N16 0.491,
+  N32 0.486. classic_c16 0.482. Best is aug_L8_N8 (+0.013 over classic); non-monotonic (peaks
+  at N8, declines for N16/N32). All within ~0.47–0.50.
+- W_in trainable weights are 1200 for every config (16-input fan-in); J1/W_out grow with C
+  (trainable 10144 → 88504).
+- 1 seed (screen); classic_c16 here 0.482 vs exp-1 3-seed best-checkpoint 0.506.
+
+Per the plan (step 2 = local rule only if the screen shows headroom): the ceiling does not rise
+meaningfully with N, so step 2 was not run. Reference: exp-1 architecture ceiling ~0.51.
+
+Screen configs: `results/screen_<name>.json`.

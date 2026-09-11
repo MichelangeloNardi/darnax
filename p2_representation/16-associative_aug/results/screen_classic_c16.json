@@ -1,0 +1,15 @@
+{
+  "name": "classic_c16",
+  "C": 16,
+  "seeds": [
+    0
+  ],
+  "probe_D_mean": 0.4817,
+  "probe_D_std": 0.0,
+  "probe_D_seeds": [
+    0.4817
+  ],
+  "best_sep_seeds": [
+    0.40869140625
+  ]
+}

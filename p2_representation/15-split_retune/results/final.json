@@ -6,8 +6,77 @@
   ],
   "epochs": 20,
   "n_hp": 9,
-  "note": "standard_c24/split_c24 pending final_c24pair regen; see README table",
   "models": {
+    "standard_c24": {
+      "arch": "standard_C24",
+      "rule": "dynamical",
+      "baseline_cfg": {
+        "probe_D_mean": 0.46236666666666665,
+        "probe_D_std": 0.0015520595635763635,
+        "head_D_mean": 0.28250000000000003,
+        "probe_D_seeds": [
+          0.4643,
+          0.4623,
+          0.4605
+        ]
+      },
+      "tuned9_cfg": {
+        "probe_D_mean": 0.4532333333333334,
+        "probe_D_std": 0.007245381670799364,
+        "head_D_mean": 0.37893333333333334,
+        "probe_D_seeds": [
+          0.443,
+          0.4579,
+          0.4588
+        ]
+      },
+      "tuned9_params": {
+        "lr_j": 0.0009577320704913825,
+        "lr_win": 0.015982858964364435,
+        "j_d": 0.9250914605204584,
+        "threshold_j": 2.0560845593742774,
+        "free_n_iter": 4,
+        "entropy_beta": 0.22351773124972227,
+        "clamped_n_iter": 3,
+        "warmup_n_iter": 2,
+        "strength_back": 1.2200934987384082
+      }
+    },
+    "split_c24": {
+      "arch": "split_C24_I16_L8_N0",
+      "rule": "dynamical",
+      "baseline_cfg": {
+        "probe_D_mean": 0.4187666666666667,
+        "probe_D_std": 0.016004235550489628,
+        "head_D_mean": 0.3192,
+        "probe_D_seeds": [
+          0.4075,
+          0.4414,
+          0.4074
+        ]
+      },
+      "tuned9_cfg": {
+        "probe_D_mean": 0.42976666666666663,
+        "probe_D_std": 0.0031478387647541363,
+        "head_D_mean": 0.3728,
+        "probe_D_seeds": [
+          0.4258,
+          0.43,
+          0.4335
+        ]
+      },
+      "tuned9_params": {
+        "lr_j": 0.0018546957024449255,
+        "lr_win": 0.0028526797968072633,
+        "j_d": 1.0128593093734033,
+        "threshold_j": 2.0169636774685786,
+        "free_n_iter": 6,
+        "entropy_beta": 0.7172276527284086,
+        "clamped_n_iter": 16,
+        "warmup_n_iter": 1,
+        "strength_back": 1.0659719524791385
+      }
+    },
     "partial_c24": {
       "arch": "partial",
       "rule": "dynamical",

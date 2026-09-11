@@ -41,6 +41,40 @@ a strong negative, a split win despite fewer effective params means routing help
 
 Reference: exp-13 6-HP tuned numbers in `../13-hp_tuning/results/final.json`.
 
-## Results
+## Results (3 machines; C32 tuning had to be moved off contended w03)
 
-_Pending sweep._
+Tuned HPs per target (8-ep screen optimum), new knobs in **bold**:
+
+| target | lr_j | lr_win | j_d | thr_j | free | **clamped** | **warmup** | **strength_back** | screen probe_D |
+|---|---|---|---|---|---|---|---|---|---|
+| standard_c24 | 1.0e-3 | 1.6e-2 | 0.925 | 2.06 | 4 | **3** | **2** | **1.22** | 0.458 |
+| split_c24 | 1.9e-3 | 2.9e-3 | 1.013 | 2.02 | 6 | **16** | **1** | **1.07** | 0.436 |
+| partial_c24 | — | — | — | — | — | — | — | — | 0.464 |
+| standard_c32 | — | — | — | — | — | — | — | — | 0.471 |
+| split_c32 | — | — | — | — | — | — | — | — | 0.440 |
+
+Confirmed re-run (`final.py`, 3 seeds × 20 ep), baseline-config vs 9-HP tuned config:
+
+| target | baseline-cfg probe_D | tuned9 probe_D |
+|---|---|---|
+| standard_c24 | 0.463 | 0.453 ± 0.00X |
+| split_c24 | 0.421 | 0.431 |
+| partial_c24 | 0.435 | 0.436 ± 0.012 |
+| standard_c32 | 0.477 | 0.460 ± 0.006 |
+| split_c32 | 0.421 | 0.434 ± 0.009 |
+
+**Factual observations (numbers only):**
+- split vs dense at same C (same nominal params): split_c24 tuned9 0.431 vs standard_c24 tuned9
+  0.453 (baseline-cfg 0.463); split_c32 tuned9 0.434 vs standard_c32 tuned9 0.460 (baseline-cfg
+  0.477). partial_c24 tuned9 0.436.
+- split_c24 tuned9 0.431 vs exp-13 6-HP split_c24 0.433 (Δ ≈ 0). The tuner selected
+  `clamped_n_iter = 16` (the range max) for split_c24; `strength_back = 1.07`, `warmup = 1`.
+  standard_c24 selected `clamped_n_iter = 3` (range min).
+- For the dense controls the 8-ep screen optimum came in slightly below the baseline-config at
+  3 seeds (standard_c24 0.453 < 0.463; standard_c32 0.460 < 0.477) — screen-vs-final gap, same
+  as exp-13's split_c32.
+- head_D (own W_out): split_c24 0.377, split_c32 0.369, partial_c24 0.105, standard_c24 0.321
+  (from the per-target finals).
+
+Configs: `replicate/tuned9_<target>.json`. Studies: `results/study9_<target>.json`. 3-seed
+results: `results/final.json` (merged from the per-machine `final_*.json`).

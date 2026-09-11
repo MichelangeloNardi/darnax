@@ -1,0 +1,117 @@
+{
+  "seeds": [
+    0,
+    42,
+    123
+  ],
+  "epochs": 20,
+  "n_hp": 9,
+  "note": "standard_c24/split_c24 pending final_c24pair regen; see README table",
+  "models": {
+    "partial_c24": {
+      "arch": "partial",
+      "rule": "dynamical",
+      "baseline_cfg": {
+        "probe_D_mean": 0.4352333333333333,
+        "probe_D_std": 0.0036572606627851265,
+        "head_D_mean": 0.2927,
+        "probe_D_seeds": [
+          0.4402,
+          0.4315,
+          0.434
+        ]
+      },
+      "tuned9_cfg": {
+        "probe_D_mean": 0.4364666666666667,
+        "probe_D_std": 0.011612158379139599,
+        "head_D_mean": 0.10453333333333333,
+        "probe_D_seeds": [
+          0.4527,
+          0.4262,
+          0.4305
+        ]
+      },
+      "tuned9_params": {
+        "lr_j": 0.0017401265023579777,
+        "lr_win": 0.003039562727497048,
+        "j_d": 0.8126268508168454,
+        "threshold_j": 1.033334947904417,
+        "free_n_iter": 6,
+        "entropy_beta": 0.27936285139275013,
+        "clamped_n_iter": 3,
+        "warmup_n_iter": 2,
+        "strength_back": 4.930811437019001
+      }
+    },
+    "split_c32": {
+      "arch": "split_C32_I16_L8_N8",
+      "rule": "dynamical",
+      "baseline_cfg": {
+        "probe_D_mean": 0.42136666666666667,
+        "probe_D_std": 0.004110420362390628,
+        "head_D_mean": 0.33433333333333337,
+        "probe_D_seeds": [
+          0.4256,
+          0.4227,
+          0.4158
+        ]
+      },
+      "tuned9_cfg": {
+        "probe_D_mean": 0.4344666666666666,
+        "probe_D_std": 0.009478865379827311,
+        "head_D_mean": 0.3692666666666667,
+        "probe_D_seeds": [
+          0.437,
+          0.4218,
+          0.4446
+        ]
+      },
+      "tuned9_params": {
+        "lr_j": 0.0007193686229732939,
+        "lr_win": 0.01129482804279201,
+        "j_d": 0.7468360948502007,
+        "threshold_j": 2.237411046303519,
+        "free_n_iter": 12,
+        "entropy_beta": 0.4207989717673889,
+        "clamped_n_iter": 3,
+        "warmup_n_iter": 4,
+        "strength_back": 1.4592111334855495
+      }
+    },
+    "standard_c32": {
+      "arch": "standard_C32",
+      "rule": "dynamical",
+      "baseline_cfg": {
+        "probe_D_mean": 0.47670000000000007,
+        "probe_D_std": 0.0010984838035522707,
+        "head_D_mean": 0.28076666666666666,
+        "probe_D_seeds": [
+          0.4778,
+          0.4771,
+          0.4752
+        ]
+      },
+      "tuned9_cfg": {
+        "probe_D_mean": 0.45986666666666665,
+        "probe_D_std": 0.005633431951799484,
+        "head_D_mean": 0.2222333333333333,
+        "probe_D_seeds": [
+          0.4519,
+          0.4639,
+          0.4638
+        ]
+      },
+      "tuned9_params": {
+        "lr_j": 0.001200127217082877,
+        "lr_win": 0.006376695402131405,
+        "j_d": 1.1479804588884015,
+        "threshold_j": 2.247776156077865,
+        "free_n_iter": 12,
+        "entropy_beta": 0.48084733442384214,
+        "clamped_n_iter": 5,
+        "warmup_n_iter": 4,
+        "strength_back": 2.4003319805290393
+      }
+    }
+  }
+}

@@ -33,6 +33,30 @@ Dangerous units have **low |p_i|** and **high S_i**, i.e. `corr(|p|, flip_rate) 
   p3_spin_analysis/2-polarization/polarization.py --cfg replicate/tuned_fc_frozen.json`.
 - `.gitignore`: `results/*_smoke.json`, `models/`.
 
-## Results
+## Results (3 seeds; correlations are Pearson across the 256 units, mean ± std)
 
-_Pending run._
+Context: FC frozen overall flip_rate 0.229, mean |p_D| 0.103, mean S_D 0.171.
+
+| correlation | FC frozen | FC trainwin |
+|---|---|---|
+| corr(\|p_D\|, flip_rate) | −0.005 ± 0.029 | −0.011 ± 0.060 |
+| corr(S_D, flip_rate) | +0.026 ± 0.022 | +0.041 ± 0.040 |
+| corr(\|p_D\|, absfield_C) | +0.060 ± 0.015 | +0.200 ± 0.082 |
+| corr(S_D, importance) | +0.095 ± 0.037 | −0.108 ± 0.015 |
+| corr(S_D, damage) | +0.082 ± 0.013 | — |
+| corr(\|p_C\|, flip_rate) | +0.048 ± 0.045 | — |
+| corr(S_C, flip_rate) | +0.426 ± 0.080 | +0.419 ± 0.058 |
+| corr(S_C, importance) | +0.661 ± 0.061 | +0.561 ± 0.055 |
+| corr(\|p_D\|, importance) | +0.065 ± 0.014 | — |
+| corr(\|p_D\|, wnorm) | +0.075 ± 0.012 | — |
+
+**Factual observations (numbers only):**
+- The hypothesis directions (corr(|p|, flip_rate) < 0, corr(S_D, flip_rate) > 0) are ≈ 0 on
+  both models: corr(|p_D|, flip_rate) −0.005 / −0.011; corr(S_D, flip_rate) +0.026 / +0.041.
+- Selectivity measured on the clamped state C is the largest signal: corr(S_C, importance)
+  +0.661 / +0.561; corr(S_C, flip_rate) +0.426 / +0.419. The state-D (label-free) versions are
+  ≈ 0: corr(S_D, importance) +0.095 / −0.108.
+- |p| (the label-free descriptor) is ≈ 0 against every danger quantity on both models.
+
+Full per-unit correlation set: `results/polarization_{frozen,trainwin}.json`; per-unit scatter
++ correlation bars in `figures/polarization.png` (regenerate via `plot.py`).

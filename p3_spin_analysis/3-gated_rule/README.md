@@ -35,24 +35,29 @@ position×channel (matches the per-spin diagnosis; the gate is per-activation).
 Cluster: `XLA_PYTHON_CLIENT_PREALLOCATE=false ~/miniforge3/envs/darnax_hpc/bin/python
 p3_spin_analysis/3-gated_rule/gated_kappa.py`.
 
-## Results — κ functional sweep (3 seeds × 20 ep; boost=0 = baseline)
+## Results — κ sweep with the Ω_CD diagnostic (3 seeds × 20 ep; boost=0 = baseline)
 
-| cell | probe_D | head_D |
-|---|---|---|
-| baseline (boost 0) | 0.438 ± 0.006 | 0.241 |
-| boost 0.5, q 0.25 | 0.439 ± 0.002 | 0.309 |
-| boost 0.5, q 0.5 | 0.441 ± 0.004 | 0.339 |
-| boost 1.0, q 0.25 | 0.435 ± 0.004 | 0.343 |
-| boost 1.0, q 0.5 | 0.436 ± 0.005 | 0.381 |
-| boost 2.0, q 0.25 | 0.433 ± 0.003 | 0.404 |
-| boost 2.0, q 0.5 | 0.432 ± 0.005 | 0.414 |
+Ω_CD = C↔D overlap = mean(sign C · sign D). head_C / head_D = model's own W_out accuracy on C / D.
+
+| cell | probe_D | head_D | head_C | Ω_CD |
+|---|---|---|---|---|
+| baseline (boost 0) | 0.440 | 0.241 | 0.909 | 0.896 |
+| boost 0.5, q 0.25 | 0.440 | 0.309 | 0.809 | 0.937 |
+| boost 0.5, q 0.5 | 0.441 | 0.339 | 0.681 | 0.951 |
+| boost 1.0, q 0.25 | 0.437 | 0.343 | 0.650 | 0.958 |
+| boost 1.0, q 0.5 | 0.437 | 0.381 | 0.556 | 0.969 |
+| boost 2.0, q 0.25 | 0.435 | 0.404 | 0.506 | 0.975 |
+| boost 2.0, q 0.5 | 0.433 | 0.414 | 0.462 | 0.981 |
+
+`corr(Ω_CD, head_D)` across cells = **+0.986**.
 
 **Factual observations (numbers only):**
-- probe_D (target): 0.432–0.441 across all cells, vs baseline 0.438 — flat, no cell above
-  baseline within std; the largest boost (2.0, q 0.5) is 0.432 (≤ baseline). Reference: gradient
-  ceiling ~0.51.
-- head_D (model's own W_out): rises monotonically with boost, 0.241 (baseline) → 0.414
-  (boost 2.0, q 0.5).
+- probe_D (target): 0.433–0.441 across all cells vs baseline 0.440 — flat (no cell above
+  baseline; largest boost ≤ baseline). Reference: gradient ceiling ~0.51.
+- Ω_CD rises monotonically with boost: 0.896 → 0.981.
+- head_D rises 0.241 → 0.414; head_C falls 0.909 → 0.462; the head_C↔head_D gap closes from
+  0.668 to 0.048 (they converge). corr(Ω_CD, head_D) = +0.986.
+- At the highest boost, head_C ≈ head_D ≈ 0.46 ≈ probe_D 0.44.
 
 Result: `results/gated_kappa.json`. Per the standing rule, κ's new knobs (boost, q) were swept
 at the tuned baseline config; probe_D did not move → the per-channel η fallback is run next.

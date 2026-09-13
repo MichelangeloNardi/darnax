@@ -78,25 +78,41 @@ def set_kappa(trainer, kmap):
     return trainer
 
 
-def probe_D(orch, state_tmpl, ds, cfg, key, probe_epochs, train_batches):
-    warmup, free = cfg.get("warmup_n_iter", 1), cfg["free_n_iter"]
-    roll = eqx.filter_jit(cm.make_rollout(warmup, 0, free))
+def measure(orch, state_tmpl, ds, cfg, key, probe_epochs, train_batches, ov_batches=63):
+    """probe_D + head_D + head_C + Omega_CD (C<->D overlap = mean(sign C · sign D)).
+    Omega_CD is the diagnostic for the head-accuracy explanation: the W_out head trains on C and
+    evals on D, so a higher C<->D overlap makes the head transfer (head_D -> head_C) even if the
+    pooled representation (probe_D) is unchanged."""
+    warmup, clamped, free = cfg.get("warmup_n_iter", 1), cfg["clamped_n_iter"], cfg["free_n_iter"]
+    rD = eqx.filter_jit(cm.make_rollout(warmup, 0, free))
+    rC = eqx.filter_jit(cm.make_rollout(warmup, clamped, free))
+    Wout = np.asarray(orch.lmap[2][1].W)
 
-    def grab(it, mb):
-        X, Y, k = [], [], key
+    def grab_pooled(it, mb, k):
+        X, Y = [], []
         for i, (xb, yb) in enumerate(it):
             if mb is not None and i >= mb:
                 break
-            s, k = roll(orch, state_tmpl.init(cm.to_hwc(xb), yb), k)
+            s, k = rD(orch, state_tmpl.init(cm.to_hwc(xb), yb), k)
             X.append(np.asarray(cm.pool_j1(np.asarray(s[1])))); Y.append(np.asarray(yb))
-        return np.concatenate(X), np.concatenate(Y)
-    Xtr, Ytr = grab(ds, train_batches)
-    Xte, Yte = grab(ds.iter_test(), None)
+        return np.concatenate(X), np.concatenate(Y), k
+    Xtr, Ytr, key = grab_pooled(ds, train_batches, key)
+    Xte, Yte, key = grab_pooled(ds.iter_test(), None, key)
     ytr, yte = np.argmax(Ytr, 1), np.argmax(Yte, 1)
     pD = max(bc.offline_probe(Xtr, ytr, Xte, yte, probe_epochs))
-    Wout = np.asarray(orch.lmap[2][1].W)
-    head = float((Xte @ Wout).argmax(1).__eq__(yte).mean())
-    return pD, head
+    head_D = float((Xte @ Wout).argmax(1).__eq__(yte).mean())
+
+    ov, hc, k = [], [], key
+    for i, (xb, yb) in enumerate(ds.iter_test()):
+        if i >= ov_batches:
+            break
+        y = np.argmax(np.asarray(yb), 1)
+        sC, k = rC(orch, state_tmpl.init(cm.to_hwc(xb), yb), k)
+        sD, k = rD(orch, state_tmpl.init(cm.to_hwc(xb), yb), k)
+        Cs, Ds = np.asarray(sC[1]), np.asarray(sD[1])
+        ov.append(float((np.sign(Cs) * np.sign(Ds)).mean()))
+        hc.append(float((np.asarray(cm.pool_j1(Cs)) @ Wout).argmax(1).__eq__(y).mean()))
+    return pD, head_D, float(np.mean(hc)), float(np.mean(ov))
 
 
 def run(cfg, ds, boost, q, seed, args):
@@ -109,8 +125,7 @@ def run(cfg, ds, boost, q, seed, args):
         kmap = compute_kappa_map(trainer.orchestrator, state, ds, cfg, key, boost, q, args.kappa_batches)
         trainer = set_kappa(trainer, kmap)
         trainer, key = _train_epoch(trainer, ds, key, cfg["kernel_decay_rate"], args.max_batches)
-    pD, head = probe_D(trainer.orchestrator, state, ds, cfg, key, args.probe_epochs, args.probe_train_batches)
-    return pD, head
+    return measure(trainer.orchestrator, state, ds, cfg, key, args.probe_epochs, args.probe_train_batches)
 
 
 def _train_epoch(trainer, ds, key, dr, max_batches):
@@ -148,15 +163,17 @@ def main():
     results = {"config": "best_channel_entropy", "seeds": args.seeds, "cells": {}}
     for boost, q in combos:
         tag = "baseline" if boost == 0.0 else f"boost{boost}_q{q}"
-        pDs, heads = [], []
+        pDs, hDs, hCs, ovs = [], [], [], []
         for seed in args.seeds:
-            pD, head = run(cfg, ds, boost, q, seed, args)
-            pDs.append(pD); heads.append(head)
+            pD, hD, hC, ov = run(cfg, ds, boost, q, seed, args)
+            pDs.append(pD); hDs.append(hD); hCs.append(hC); ovs.append(ov)
         results["cells"][tag] = {"boost": boost, "q": q,
                                  "probe_D_mean": float(np.mean(pDs)), "probe_D_std": float(np.std(pDs)),
-                                 "head_D_mean": float(np.mean(heads)), "probe_D_seeds": pDs}
-        print(f"  [{tag:16s}] probe_D={np.mean(pDs):.3f}±{np.std(pDs):.3f} head_D={np.mean(heads):.3f} "
-              f"({cm.fmt(time.time()-t0)})")
+                                 "head_D_mean": float(np.mean(hDs)), "head_C_mean": float(np.mean(hCs)),
+                                 "omega_CD_mean": float(np.mean(ovs)), "omega_CD_std": float(np.std(ovs)),
+                                 "probe_D_seeds": pDs}
+        print(f"  [{tag:16s}] probe_D={np.mean(pDs):.3f} head_D={np.mean(hDs):.3f} "
+              f"head_C={np.mean(hCs):.3f} Omega_CD={np.mean(ovs):.3f} ({cm.fmt(time.time()-t0)})")
 
     out_dir = HERE / "results"; out_dir.mkdir(exist_ok=True)
     out_path = out_dir / ("smoke.json" if args.smoke else "gated_kappa.json")

@@ -121,7 +121,7 @@ def run(cfg, ds, boost, q, seed, args):
         emap = compute_eta_map(trainer.orchestrator, state, ds, cfg, key, boost, q, args.kappa_batches)
         trainer.orchestrator = eqx.tree_at(lambda o: o.lmap[1][1].eta_map, trainer.orchestrator, emap)
         trainer, key = GK._train_epoch(trainer, ds, key, cfg["kernel_decay_rate"], args.max_batches)
-    return GK.probe_D(trainer.orchestrator, state, ds, cfg, key, args.probe_epochs, args.probe_train_batches)
+    return GK.measure(trainer.orchestrator, state, ds, cfg, key, args.probe_epochs, args.probe_train_batches)
 
 
 def main():
@@ -147,15 +147,16 @@ def main():
     results = {"config": "best_channel_entropy", "seeds": args.seeds, "cells": {}}
     for boost, q in combos:
         tag = "baseline" if boost == 0.0 else f"eta{boost}_q{q}"
-        pDs, heads = [], []
+        pDs, hDs, hCs, ovs = [], [], [], []
         for seed in args.seeds:
-            pD, head = run(cfg, ds, boost, q, seed, args)
-            pDs.append(pD); heads.append(head)
+            pD, hD, hC, ov = run(cfg, ds, boost, q, seed, args)
+            pDs.append(pD); hDs.append(hD); hCs.append(hC); ovs.append(ov)
         results["cells"][tag] = {"boost": boost, "q": q, "probe_D_mean": float(np.mean(pDs)),
-                                 "probe_D_std": float(np.std(pDs)), "head_D_mean": float(np.mean(heads)),
+                                 "probe_D_std": float(np.std(pDs)), "head_D_mean": float(np.mean(hDs)),
+                                 "head_C_mean": float(np.mean(hCs)), "omega_CD_mean": float(np.mean(ovs)),
                                  "probe_D_seeds": pDs}
-        print(f"  [{tag:14s}] probe_D={np.mean(pDs):.3f}±{np.std(pDs):.3f} head_D={np.mean(heads):.3f} "
-              f"({cm.fmt(time.time()-t0)})")
+        print(f"  [{tag:14s}] probe_D={np.mean(pDs):.3f} head_D={np.mean(hDs):.3f} "
+              f"head_C={np.mean(hCs):.3f} Omega_CD={np.mean(ovs):.3f} ({cm.fmt(time.time()-t0)})")
 
     out_dir = HERE / "results"; out_dir.mkdir(exist_ok=True)
     out_path = out_dir / ("eta_smoke.json" if args.smoke else "gated_eta.json")

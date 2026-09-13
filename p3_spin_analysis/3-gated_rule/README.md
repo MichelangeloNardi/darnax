@@ -56,3 +56,23 @@ p3_spin_analysis/3-gated_rule/gated_kappa.py`.
 
 Result: `results/gated_kappa.json`. Per the standing rule, κ's new knobs (boost, q) were swept
 at the tuned baseline config; probe_D did not move → the per-channel η fallback is run next.
+
+## Results — η fallback (per-channel lr boost on dangerous channels; 3 seeds × 20 ep)
+
+| cell | probe_D | head_D |
+|---|---|---|
+| baseline (boost 0) | 0.439 ± 0.006 | 0.241 |
+| eta 1.0, q 0.25 | 0.440 ± 0.000 | 0.266 |
+| eta 1.0, q 0.5 | 0.443 ± 0.001 | 0.251 |
+| eta 3.0, q 0.25 | 0.442 ± 0.004 | 0.239 |
+| eta 3.0, q 0.5 | 0.439 ± 0.007 | 0.274 |
+| eta 6.0, q 0.25 | 0.440 ± 0.004 | 0.269 |
+| eta 6.0, q 0.5 | 0.444 ± 0.003 | 0.297 |
+
+**Factual observations (numbers only):**
+- probe_D: 0.439–0.444 across all η cells vs baseline 0.439 — flat (within std), up to boost 6×.
+- head_D: 0.239–0.297 (baseline 0.241) — small, non-monotonic; smaller than the κ head_D lift
+  (which reached 0.414). Reference: gradient ceiling ~0.51.
+
+Result: `results/gated_eta.json`. Both gated-rule knobs (κ firing-frequency, η update-magnitude)
+leave probe_D at the ~0.44 baseline.
